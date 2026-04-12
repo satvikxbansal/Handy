@@ -1,0 +1,138 @@
+{
+  "": {
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/master.swiftdeps"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/AppDelegate.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ChatMessage.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ChatHistoryManager.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HandyManager.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HotkeyManager.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/OverlayManager.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ScreenCaptureService.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SpeechRecognitionService.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/TTSService.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/PointParser.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatInterfaceView.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatPanelManager.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatPanelManager.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatPanelManager.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatPanelManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatPanelManager.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatPanelManager.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/SettingsView.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.dia"
+  }
+}
