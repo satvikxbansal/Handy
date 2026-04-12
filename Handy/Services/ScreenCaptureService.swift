@@ -91,6 +91,8 @@ enum ScreenCaptureService {
                     width: CGFloat(display.width),
                     height: CGFloat(display.height)
                 )
+                let displayPtsWidth = nsScreen?.frame.width ?? CGFloat(display.width)
+                let displayPtsHeight = nsScreen?.frame.height ?? CGFloat(display.height)
 
                 results.append(HandyScreenCapture(
                     imageData: jpegData,
@@ -98,8 +100,8 @@ enum ScreenCaptureService {
                     isCursorScreen: isCursor,
                     screenshotWidthPx: config.width,
                     screenshotHeightPx: config.height,
-                    displayWidthPts: CGFloat(display.width),
-                    displayHeightPts: CGFloat(display.height),
+                    displayWidthPts: displayPtsWidth,
+                    displayHeightPts: displayPtsHeight,
                     displayFrame: displayFrame
                 ))
             } catch {
@@ -176,14 +178,23 @@ enum ScreenCaptureService {
             height: CGFloat(windowHeight)
         )
 
+        let nsScreen = NSScreen.screens.first { screen in
+            screen.frame.contains(CGPoint(
+                x: targetWindow.frame.midX,
+                y: NSScreen.screens.first.map { $0.frame.height - targetWindow.frame.midY } ?? targetWindow.frame.midY
+            ))
+        }
+        let displayPtsWidth = nsScreen?.frame.width ?? CGFloat(windowWidth)
+        let displayPtsHeight = nsScreen?.frame.height ?? CGFloat(windowHeight)
+
         return [HandyScreenCapture(
             imageData: jpegData,
             label: windowLabel,
             isCursorScreen: isCursorScreen,
             screenshotWidthPx: config.width,
             screenshotHeightPx: config.height,
-            displayWidthPts: CGFloat(windowWidth),
-            displayHeightPts: CGFloat(windowHeight),
+            displayWidthPts: displayPtsWidth,
+            displayHeightPts: displayPtsHeight,
             displayFrame: windowFrame
         )]
     }

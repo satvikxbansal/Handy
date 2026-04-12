@@ -1,10 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Manages the full-screen transparent overlay window for the pointing cursor.
+/// Manages per-screen transparent overlay windows for the pointing cursor.
 final class OverlayManager {
-    private var overlayWindow: NSWindow?
-    private var overlayView: OverlayContentView?
+    private var overlayWindows: [NSWindow] = []
+    private var overlayViews: [OverlayContentView] = []
     private var hideTimer: Timer?
 
     func pointAt(_ screenPoint: CGPoint, label: String, duration: TimeInterval = 4.0) {
@@ -16,55 +16,63 @@ final class OverlayManager {
     func hide() {
         DispatchQueue.main.async { [weak self] in
             self?.hideTimer?.invalidate()
-            self?.overlayWindow?.orderOut(nil)
+            self?.overlayWindows.forEach { $0.orderOut(nil) }
         }
     }
 
     private func showOverlay(at point: CGPoint, label: String, duration: TimeInterval) {
         hideTimer?.invalidate()
+        rebuildWindowsIfNeeded()
 
-        if overlayWindow == nil {
-            createOverlayWindow()
+        let targetScreen = NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main!
+
+        for (window, view) in zip(overlayWindows, overlayViews) {
+            window.setFrame(window.screen?.frame ?? targetScreen.frame, display: true)
+            if window.screen == targetScreen || window.frame.contains(point) {
+                window.orderFrontRegardless()
+                let localPoint = CGPoint(
+                    x: point.x - window.frame.origin.x,
+                    y: point.y - window.frame.origin.y
+                )
+                view.animateTo(point: localPoint, label: label)
+            } else {
+                window.orderOut(nil)
+            }
         }
-
-        guard let window = overlayWindow else { return }
-
-        let screen = NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main!
-        window.setFrame(screen.frame, display: true)
-        window.orderFrontRegardless()
-
-        let localPoint = CGPoint(
-            x: point.x - screen.frame.origin.x,
-            y: point.y - screen.frame.origin.y
-        )
-        overlayView?.animateTo(point: localPoint, label: label)
 
         hideTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
             self?.hide()
         }
     }
 
-    private func createOverlayWindow() {
-        guard let screen = NSScreen.main else { return }
+    private func rebuildWindowsIfNeeded() {
+        let screens = NSScreen.screens
+        guard overlayWindows.count != screens.count else { return }
 
-        let window = NSWindow(
-            contentRect: screen.frame,
-            styleMask: .borderless,
-            backing: .buffered,
-            defer: false
-        )
-        window.level = .statusBar + 1
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.ignoresMouseEvents = true
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        window.hasShadow = false
+        overlayWindows.forEach { $0.orderOut(nil) }
+        overlayWindows.removeAll()
+        overlayViews.removeAll()
 
-        let contentView = OverlayContentView(frame: screen.frame)
-        window.contentView = contentView
+        for screen in screens {
+            let window = NSWindow(
+                contentRect: screen.frame,
+                styleMask: .borderless,
+                backing: .buffered,
+                defer: false
+            )
+            window.level = .statusBar + 1
+            window.isOpaque = false
+            window.backgroundColor = .clear
+            window.ignoresMouseEvents = true
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            window.hasShadow = false
 
-        overlayWindow = window
-        overlayView = contentView
+            let contentView = OverlayContentView(frame: screen.frame)
+            window.contentView = contentView
+
+            overlayWindows.append(window)
+            overlayViews.append(contentView)
+        }
     }
 }
 

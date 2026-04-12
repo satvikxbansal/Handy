@@ -33,8 +33,8 @@ final class ChatPanelManager: NSObject {
 
         clickOutsideMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self, let panel = self.panel else { return }
-            let windowFrame = panel.frame
-            if !windowFrame.contains(event.locationInWindow) {
+            let clickLocation = NSEvent.mouseLocation
+            if !panel.frame.contains(clickLocation) {
                 self.hide()
             }
         }

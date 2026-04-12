@@ -30,9 +30,22 @@ final class ClaudeAPIService {
 
     private init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 60
-        config.timeoutIntervalForResource = 120
+        config.timeoutIntervalForRequest = 120
+        config.timeoutIntervalForResource = 300
+        config.waitsForConnectivity = true
+        config.urlCache = nil
+        config.httpCookieStorage = nil
         self.session = URLSession(configuration: config)
+        warmUpTLSConnection()
+    }
+
+    private func warmUpTLSConnection() {
+        guard let host = URL(string: baseURL)?.host,
+              let warmupURL = URL(string: "https://\(host)/") else { return }
+        var request = URLRequest(url: warmupURL)
+        request.httpMethod = "HEAD"
+        request.timeoutInterval = 10
+        session.dataTask(with: request) { _, _, _ in }.resume()
     }
 
     /// Streams a response from Claude with vision (screenshots) and conversation history.
@@ -139,7 +152,18 @@ final class ClaudeAPIService {
         task.resume()
     }
 
-    /// Streaming with URLSession delegate for real-time SSE chunks
+    /// Detects the MIME type of image data by inspecting magic bytes.
+    private func detectImageMediaType(for imageData: Data) -> String {
+        if imageData.count >= 4 {
+            let pngSignature: [UInt8] = [0x89, 0x50, 0x4E, 0x47]
+            if [UInt8](imageData.prefix(4)) == pngSignature {
+                return "image/png"
+            }
+        }
+        return "image/jpeg"
+    }
+
+    /// Streaming via the shared URLSession using async bytes — no per-request session leak.
     func streamResponseAsync(
         userMessage: String,
         images: [(data: Data, label: String)],
@@ -166,7 +190,7 @@ final class ClaudeAPIService {
                     "type": "image",
                     "source": [
                         "type": "base64",
-                        "media_type": "image/jpeg",
+                        "media_type": self.detectImageMediaType(for: image.data),
                         "data": base64
                     ]
                 ])
@@ -190,19 +214,59 @@ final class ClaudeAPIService {
 
             var request = URLRequest(url: URL(string: self.baseURL)!)
             request.httpMethod = "POST"
+            request.timeoutInterval = 120
             request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
             request.setValue(self.apiVersion, forHTTPHeaderField: "anthropic-version")
             request.setValue("application/json", forHTTPHeaderField: "content-type")
             request.httpBody = jsonData
 
-            let delegate = SSEStreamDelegate(continuation: continuation)
-            let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-            let task = session.dataTask(with: request)
-            task.resume()
+            let sharedSession = self.session
 
-            continuation.onTermination = { _ in
-                task.cancel()
+            Task {
+                do {
+                    let (byteStream, response) = try await sharedSession.bytes(for: request)
+
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        continuation.finish(throwing: ClaudeAPIError.invalidResponse)
+                        return
+                    }
+
+                    guard httpResponse.statusCode == 200 else {
+                        var errorBody = ""
+                        for try await line in byteStream.lines {
+                            errorBody += line + "\n"
+                        }
+                        continuation.finish(throwing: ClaudeAPIError.httpError(httpResponse.statusCode, errorBody))
+                        return
+                    }
+
+                    for try await line in byteStream.lines {
+                        guard line.hasPrefix("data: ") else { continue }
+                        let jsonStr = String(line.dropFirst(6))
+                        guard jsonStr != "[DONE]" else { break }
+
+                        guard let jsonData = jsonStr.data(using: .utf8),
+                              let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+                            continue
+                        }
+
+                        if let delta = json["delta"] as? [String: Any],
+                           let text = delta["text"] as? String {
+                            continuation.yield(text)
+                        }
+
+                        if let type = json["type"] as? String, type == "message_stop" {
+                            break
+                        }
+                    }
+
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: ClaudeAPIError.networkError(error))
+                }
             }
+
+            continuation.onTermination = { @Sendable _ in }
         }
     }
 
@@ -233,71 +297,3 @@ final class ClaudeAPIService {
     }
 }
 
-// MARK: - SSE Streaming Delegate
-
-private final class SSEStreamDelegate: NSObject, URLSessionDataDelegate {
-    private let continuation: AsyncThrowingStream<String, Error>.Continuation
-    private var buffer = ""
-    private var receivedHTTPResponse = false
-    private var httpStatusCode: Int = 0
-
-    init(continuation: AsyncThrowingStream<String, Error>.Continuation) {
-        self.continuation = continuation
-    }
-
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-        receivedHTTPResponse = true
-        httpStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-
-        if httpStatusCode != 200 {
-            completionHandler(.allow)
-            return
-        }
-        completionHandler(.allow)
-    }
-
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        guard let chunk = String(data: data, encoding: .utf8) else { return }
-
-        if httpStatusCode != 200 {
-            buffer += chunk
-            return
-        }
-
-        buffer += chunk
-
-        while let newlineRange = buffer.range(of: "\n") {
-            let line = String(buffer[buffer.startIndex..<newlineRange.lowerBound])
-            buffer = String(buffer[newlineRange.upperBound...])
-
-            guard line.hasPrefix("data: ") else { continue }
-            let jsonStr = String(line.dropFirst(6))
-            guard jsonStr != "[DONE]" else { continue }
-
-            guard let jsonData = jsonStr.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
-                continue
-            }
-
-            if let delta = json["delta"] as? [String: Any],
-               let text = delta["text"] as? String {
-                continuation.yield(text)
-            }
-
-            if let type = json["type"] as? String, type == "message_stop" {
-                continuation.finish()
-                return
-            }
-        }
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if let error {
-            continuation.finish(throwing: ClaudeAPIError.networkError(error))
-        } else if httpStatusCode != 200 {
-            continuation.finish(throwing: ClaudeAPIError.httpError(httpStatusCode, buffer))
-        } else {
-            continuation.finish()
-        }
-    }
-}

@@ -19,13 +19,11 @@ final class TTSService: NSObject, ObservableObject {
     }
 
     func speak(_ text: String) {
-        let cleaned = PointParser.stripPointTags(from: text)
-
         if AppSettings.shared.ttsProvider == .elevenLabs,
            let _ = KeychainManager.getAPIKey(.elevenLabs) {
-            speakWithElevenLabs(cleaned)
+            speakWithElevenLabs(text)
         } else {
-            speakWithSystem(cleaned)
+            speakWithSystem(text)
         }
     }
 

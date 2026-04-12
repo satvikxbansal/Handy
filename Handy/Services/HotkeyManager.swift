@@ -26,7 +26,13 @@ final class HotkeyManager {
 
     private let oKeyTimeout: TimeInterval = 0.4
 
+    deinit {
+        stop()
+    }
+
     func start() {
+        guard eventTap == nil else { return }
+
         let eventMask: CGEventMask =
             (1 << CGEventType.flagsChanged.rawValue) |
             (1 << CGEventType.keyDown.rawValue) |
@@ -50,22 +56,29 @@ final class HotkeyManager {
 
         eventTap = tap
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+        CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
     }
 
     func stop() {
-        if let tap = eventTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            if let source = runLoopSource {
-                CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
-            }
+        if let source = runLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            self.runLoopSource = nil
         }
-        eventTap = nil
-        runLoopSource = nil
+        if let tap = eventTap {
+            CFMachPortInvalidate(tap)
+            self.eventTap = nil
+        }
     }
 
     private func handleEvent(type: CGEventType, event: CGEvent) {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = eventTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return
+        }
+
         switch type {
         case .flagsChanged:
             let flags = event.flags

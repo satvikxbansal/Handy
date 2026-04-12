@@ -11,6 +11,7 @@ enum VoiceState: String {
 
 /// Central orchestrator. Coordinates hotkeys, voice, screenshots, Claude API,
 /// chat history, pointing overlay, and tutor mode.
+@MainActor
 final class HandyManager: NSObject, ObservableObject {
     static let shared = HandyManager()
 
@@ -24,6 +25,10 @@ final class HandyManager: NSObject, ObservableObject {
     @Published var streamingText = ""
     @Published var loadingVerb = ""
 
+    // MARK: - Permissions
+
+    @Published var hasAccessibilityPermission = false
+
     // MARK: - Dependencies
 
     private let hotkeyManager = HotkeyManager()
@@ -36,6 +41,7 @@ final class HandyManager: NSObject, ObservableObject {
     // MARK: - Tutor Mode
 
     private var tutorIdleCancellable: AnyCancellable?
+    private var activityMonitor: Any?
     private var idleTimer: Timer?
     private var isTutorObservationInFlight = false
     private var lastUserActivityTime = Date()
@@ -44,7 +50,9 @@ final class HandyManager: NSObject, ObservableObject {
 
     private var pendingTranscript = ""
     private var loadingTimer: Timer?
+    private var currentResponseTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
+    private var permissionTimer: Timer?
 
     weak var chatPanelManager: ChatPanelManager?
 
@@ -137,16 +145,51 @@ final class HandyManager: NSObject, ObservableObject {
     }
 
     func start() {
-        hotkeyManager.start()
+        refreshPermissions()
         loadCurrentToolContext()
         bindTutorMode()
+        startPermissionPolling()
     }
 
     func stop() {
         hotkeyManager.stop()
         speechService.stopListening()
         ttsService.stop()
-        idleTimer?.invalidate()
+        stopTutorIdleDetection()
+        currentResponseTask?.cancel()
+        currentResponseTask = nil
+        permissionTimer?.invalidate()
+        permissionTimer = nil
+    }
+
+    // MARK: - Permission Management
+
+    func refreshPermissions() {
+        let previouslyHadAccessibility = hasAccessibilityPermission
+        hasAccessibilityPermission = AXIsProcessTrusted()
+
+        if hasAccessibilityPermission {
+            hotkeyManager.start()
+        } else {
+            hotkeyManager.stop()
+        }
+
+        if !previouslyHadAccessibility && hasAccessibilityPermission {
+            print("✅ Handy: Accessibility permission granted")
+        }
+    }
+
+    func requestAccessibilityPermission() {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
+        AXIsProcessTrustedWithOptions(options)
+    }
+
+    private func startPermissionPolling() {
+        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshPermissions()
+            }
+        }
     }
 
     // MARK: - Tool Context
@@ -184,6 +227,9 @@ final class HandyManager: NSObject, ObservableObject {
     // MARK: - Send Message
 
     func sendMessage(_ text: String) {
+        currentResponseTask?.cancel()
+        ttsService.stop()
+
         let toolName = resolveToolName()
         let userMsg = ChatMessage(role: .user, content: text, toolName: toolName)
         messages.append(userMsg)
@@ -193,9 +239,11 @@ final class HandyManager: NSObject, ObservableObject {
         streamingText = ""
         startLoadingAnimation()
 
-        Task { @MainActor in
+        currentResponseTask = Task { @MainActor in
             do {
                 let captures = try await ScreenCaptureService.captureAllScreens()
+                guard !Task.isCancelled else { return }
+
                 let images = captures.map { cap in
                     let dims = " (image dimensions: \(cap.screenshotWidthPx)x\(cap.screenshotHeightPx) pixels)"
                     return (data: cap.imageData, label: cap.label + dims)
@@ -222,6 +270,7 @@ final class HandyManager: NSObject, ObservableObject {
                     conversationHistory: history,
                     systemPrompt: systemPrompt
                 ) {
+                    guard !Task.isCancelled else { return }
                     fullResponse += chunk
                     streamingText = introPrefix + fullResponse
 
@@ -235,14 +284,17 @@ final class HandyManager: NSObject, ObservableObject {
                     }
                 }
 
+                guard !Task.isCancelled else { return }
+
                 let finalText = introPrefix + fullResponse
+                let cleanedText = PointParser.stripPointTags(from: finalText)
                 stopLoadingAnimation()
                 voiceState = .responding
 
                 if let idx = messages.lastIndex(where: { $0.id == assistantMsg.id }) {
                     messages[idx] = ChatMessage(
                         role: .assistant,
-                        content: PointParser.stripPointTags(from: finalText),
+                        content: cleanedText,
                         toolName: toolName,
                         isStreaming: false
                     )
@@ -250,7 +302,7 @@ final class HandyManager: NSObject, ObservableObject {
 
                 let turn = ConversationTurn(
                     userMessage: text,
-                    assistantMessage: PointParser.stripPointTags(from: finalText),
+                    assistantMessage: cleanedText,
                     timestamp: Date(),
                     toolName: toolName
                 )
@@ -269,12 +321,14 @@ final class HandyManager: NSObject, ObservableObject {
                     overlayManager.pointAt(globalPoint, label: pointResult.label ?? "")
                 }
 
-                ttsService.speak(finalText)
+                ttsService.speak(cleanedText)
 
                 isProcessing = false
                 streamingText = ""
                 voiceState = .idle
 
+            } catch is CancellationError {
+                // User sent a new message — interrupted intentionally
             } catch {
                 stopLoadingAnimation()
                 voiceState = .idle
@@ -353,7 +407,7 @@ final class HandyManager: NSObject, ObservableObject {
     private func startTutorIdleDetection() {
         stopTutorIdleDetection()
 
-        NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDown, .keyDown, .scrollWheel]) { [weak self] _ in
+        activityMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDown, .keyDown, .scrollWheel]) { [weak self] _ in
             self?.lastUserActivityTime = Date()
         }
 
@@ -370,6 +424,10 @@ final class HandyManager: NSObject, ObservableObject {
     }
 
     private func stopTutorIdleDetection() {
+        if let monitor = activityMonitor {
+            NSEvent.removeMonitor(monitor)
+            activityMonitor = nil
+        }
         idleTimer?.invalidate()
         idleTimer = nil
     }
@@ -422,7 +480,7 @@ final class HandyManager: NSObject, ObservableObject {
                     overlayManager.pointAt(globalPoint, label: pointResult.label ?? "")
                 }
 
-                ttsService.speak(fullResponse)
+                ttsService.speak(cleaned)
             } catch {
                 // Tutor observations fail silently — don't interrupt user
             }
@@ -448,16 +506,17 @@ final class HandyManager: NSObject, ObservableObject {
 // MARK: - HotkeyManagerDelegate
 
 extension HandyManager: HotkeyManagerDelegate {
-    func hotkeyTriggered(_ action: HotkeyAction) {
-        DispatchQueue.main.async { [weak self] in
+    nonisolated func hotkeyTriggered(_ action: HotkeyAction) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             switch action {
             case .openChat:
-                self?.chatPanelManager?.show()
+                self.chatPanelManager?.show()
             case .voiceInput:
-                if self?.voiceState == .listening {
-                    self?.stopVoiceInput()
+                if self.voiceState == .listening {
+                    self.stopVoiceInput()
                 } else {
-                    self?.startVoiceInput()
+                    self.startVoiceInput()
                 }
             }
         }
