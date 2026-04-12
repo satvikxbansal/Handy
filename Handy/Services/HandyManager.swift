@@ -58,7 +58,7 @@ final class HandyManager: NSObject, ObservableObject {
 
     // MARK: - Loading Verbs (from Claude's action vocabulary)
 
-    private static let loadingVerbs = [
+    private nonisolated static let loadingVerbs = [
         "Analyzing your screen...",
         "Reading the interface...",
         "Scanning for context...",
@@ -408,18 +408,22 @@ final class HandyManager: NSObject, ObservableObject {
         stopTutorIdleDetection()
 
         activityMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDown, .keyDown, .scrollWheel]) { [weak self] _ in
-            self?.lastUserActivityTime = Date()
+            Task { @MainActor [weak self] in
+                self?.lastUserActivityTime = Date()
+            }
         }
 
         idleTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            guard let self,
-                  AppSettings.shared.assistantMode == .tutor,
-                  self.voiceState == .idle,
-                  !self.isTutorObservationInFlight,
-                  !self.ttsService.isSpeaking,
-                  Date().timeIntervalSince(self.lastUserActivityTime) >= 3.0 else { return }
+            Task { @MainActor [weak self] in
+                guard let self,
+                      AppSettings.shared.assistantMode == .tutor,
+                      self.voiceState == .idle,
+                      !self.isTutorObservationInFlight,
+                      !self.ttsService.isSpeaking,
+                      Date().timeIntervalSince(self.lastUserActivityTime) >= 3.0 else { return }
 
-            self.performTutorObservation()
+                self.performTutorObservation()
+            }
         }
     }
 
@@ -492,7 +496,10 @@ final class HandyManager: NSObject, ObservableObject {
     private func startLoadingAnimation() {
         loadingVerb = Self.loadingVerbs.randomElement() ?? "Processing..."
         loadingTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { [weak self] _ in
-            self?.loadingVerb = Self.loadingVerbs.randomElement() ?? "Processing..."
+            let verb = Self.loadingVerbs.randomElement() ?? "Processing..."
+            Task { @MainActor [weak self] in
+                self?.loadingVerb = verb
+            }
         }
     }
 

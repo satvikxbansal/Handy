@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 /// Manages the floating, draggable chat panel window.
+@MainActor
 final class ChatPanelManager: NSObject {
     private var panel: KeyablePanel?
     private var statusItem: NSStatusItem?
