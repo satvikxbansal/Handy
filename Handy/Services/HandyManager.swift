@@ -49,6 +49,7 @@ final class HandyManager: NSObject, ObservableObject {
     private let claudeAPI = ClaudeAPIService.shared
     private let historyManager = ChatHistoryManager.shared
     private let overlayManager = OverlayManager()
+    private let companionCursor = CompanionCursorManager()
 
     // MARK: - Tutor Mode
 
@@ -156,6 +157,7 @@ final class HandyManager: NSObject, ObservableObject {
     private override init() {
         super.init()
         hotkeyManager.delegate = self
+        companionCursor.setup(manager: self)
     }
 
     func start() {
@@ -166,6 +168,7 @@ final class HandyManager: NSObject, ObservableObject {
         loadCurrentToolContext()
         bindTutorMode()
         startPermissionPolling()
+        bindCompanionCursor()
     }
 
     func stop() {
@@ -180,6 +183,7 @@ final class HandyManager: NSObject, ObservableObject {
         toolDetectionTask = nil
         permissionTimer?.invalidate()
         permissionTimer = nil
+        companionCursor.hide()
     }
 
     // MARK: - Permission Management
@@ -215,6 +219,27 @@ final class HandyManager: NSObject, ObservableObject {
                 self?.refreshPermissions()
             }
         }
+    }
+
+    // MARK: - Companion Cursor
+
+    private func bindCompanionCursor() {
+        $voiceState
+            .receive(on: RunLoop.main)
+            .sink { [weak self] state in
+                guard let self else { return }
+                switch state {
+                case .listening, .processing:
+                    if !self.companionCursor.isShowing {
+                        self.companionCursor.show()
+                    }
+                case .idle, .responding:
+                    if self.companionCursor.isShowing {
+                        self.companionCursor.hide()
+                    }
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Tool Context
