@@ -270,6 +270,80 @@ final class ClaudeAPIService {
         }
     }
 
+    /// Lightweight non-streaming call that identifies the tool/app from a screenshot.
+    /// Returns just the tool name string, or throws on failure.
+    func detectToolName(imageData: Data) async throws -> String {
+        guard let apiKey = KeychainManager.getAPIKey(.claude) else {
+            throw ClaudeAPIError.noAPIKey
+        }
+
+        let base64 = imageData.base64EncodedString()
+        let mediaType = detectImageMediaType(for: imageData)
+
+        let prompt = """
+        look at this screenshot and identify the specific tool, app, or website the user is actively working in. \
+        return ONLY the name — nothing else. examples: "Figma", "VS Code", "Google Docs - Q3 Report", \
+        "GitHub - pull request", "Slack - #engineering", "Xcode", "Final Cut Pro". \
+        for browsers, include the site/page name, not "Safari" or "Chrome". \
+        keep it short — max 5 words.
+        """
+
+        let userContent: [[String: Any]] = [
+            [
+                "type": "image",
+                "source": [
+                    "type": "base64",
+                    "media_type": mediaType,
+                    "data": base64
+                ]
+            ],
+            ["type": "text", "text": prompt]
+        ]
+
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": 50,
+            "messages": [["role": "user", "content": userContent]]
+        ]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: body) else {
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        var request = URLRequest(url: URL(string: baseURL)!)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue(apiVersion, forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        request.httpBody = jsonData
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw ClaudeAPIError.httpError(httpResponse.statusCode, errorBody)
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let content = json["content"] as? [[String: Any]],
+              let firstBlock = content.first,
+              let text = firstBlock["text"] as? String else {
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+        guard !trimmed.isEmpty else {
+            throw ClaudeAPIError.invalidResponse
+        }
+        return trimmed
+    }
+
     private func parseSSEResponse(data: Data, onChunk: @escaping (String) -> Void) -> String {
         let text = String(data: data, encoding: .utf8) ?? ""
         var fullResponse = ""

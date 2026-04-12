@@ -9,6 +9,13 @@ enum VoiceState: String {
     case responding
 }
 
+enum ToolDetectionState {
+    case idle
+    case detecting
+    case detected
+    case failed
+}
+
 /// Central orchestrator. Coordinates hotkeys, voice, screenshots, Claude API,
 /// chat history, pointing overlay, and tutor mode.
 @MainActor
@@ -24,6 +31,10 @@ final class HandyManager: NSObject, ObservableObject {
     @Published var errorMessage: String?
     @Published var streamingText = ""
     @Published var loadingVerb = ""
+
+    // MARK: - Tool Detection
+
+    @Published var toolDetectionState: ToolDetectionState = .idle
 
     // MARK: - Permissions
 
@@ -51,6 +62,7 @@ final class HandyManager: NSObject, ObservableObject {
     private var pendingTranscript = ""
     private var loadingTimer: Timer?
     private var currentResponseTask: Task<Void, Never>?
+    private var toolDetectionTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
     private var permissionTimer: Timer?
 
@@ -158,6 +170,8 @@ final class HandyManager: NSObject, ObservableObject {
         stopTutorIdleDetection()
         currentResponseTask?.cancel()
         currentResponseTask = nil
+        toolDetectionTask?.cancel()
+        toolDetectionTask = nil
         permissionTimer?.invalidate()
         permissionTimer = nil
     }
@@ -212,7 +226,9 @@ final class HandyManager: NSObject, ObservableObject {
 
     func setToolName(_ name: String) {
         guard name != currentToolName else { return }
+        toolDetectionTask?.cancel()
         currentToolName = name
+        toolDetectionState = .detected
         loadCurrentToolContext()
     }
 
@@ -226,6 +242,42 @@ final class HandyManager: NSObject, ObservableObject {
             return windowTitle
         }
         return appName
+    }
+
+    // MARK: - Tool Auto-Detection (LLM-based)
+
+    func onChatPanelOpened() {
+        guard currentToolName.isEmpty else { return }
+        detectToolName()
+    }
+
+    private func detectToolName() {
+        toolDetectionTask?.cancel()
+        toolDetectionState = .detecting
+
+        toolDetectionTask = Task { @MainActor in
+            do {
+                let captures = try await ScreenCaptureService.captureFocusedWindow()
+                guard !Task.isCancelled, let capture = captures.first else { return }
+
+                let name = try await claudeAPI.detectToolName(imageData: capture.imageData)
+                guard !Task.isCancelled else { return }
+
+                currentToolName = name
+                toolDetectionState = .detected
+                loadCurrentToolContext()
+            } catch is CancellationError {
+                // Intentional cancellation
+            } catch {
+                guard !Task.isCancelled else { return }
+                toolDetectionState = .failed
+
+                let (appName, _, _) = ScreenCaptureService.focusedAppInfo()
+                if !appName.isEmpty && appName != "Unknown" {
+                    currentToolName = appName
+                }
+            }
+        }
     }
 
     // MARK: - Send Message

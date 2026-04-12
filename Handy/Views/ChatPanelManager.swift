@@ -28,6 +28,7 @@ final class ChatPanelManager: NSObject {
 
         guard let panel else { return }
         positionPanel(panel)
+        HandyManager.shared.onChatPanelOpened()
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         isVisible = true

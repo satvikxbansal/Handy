@@ -121,17 +121,39 @@ struct ChatInterfaceView: View {
                 .font(.system(size: 11))
                 .foregroundColor(DS.Colors.textTertiary)
 
-            TextField("Tool / App name (auto-detected)", text: $toolNameInput)
-                .textFieldStyle(.plain)
-                .font(DS.Typography.caption)
-                .foregroundColor(DS.Colors.textSecondary)
-                .onSubmit {
-                    if !toolNameInput.isEmpty {
-                        manager.setToolName(toolNameInput)
-                    }
+            if manager.toolDetectionState == .detecting && manager.currentToolName.isEmpty {
+                HStack(spacing: DS.Spacing.xs) {
+                    Text("Detecting app...")
+                        .font(DS.Typography.caption)
+                        .foregroundColor(DS.Colors.textTertiary)
+                    ProgressView()
+                        .controlSize(.mini)
+                        .tint(DS.Colors.textTertiary)
                 }
+            } else {
+                TextField("Tool / App name", text: $toolNameInput)
+                    .textFieldStyle(.plain)
+                    .font(DS.Typography.caption)
+                    .foregroundColor(DS.Colors.textSecondary)
+                    .onSubmit {
+                        if !toolNameInput.isEmpty {
+                            manager.setToolName(toolNameInput)
+                        }
+                    }
+                    .onChange(of: manager.currentToolName) { _, newValue in
+                        if toolNameInput.isEmpty && !newValue.isEmpty {
+                            toolNameInput = newValue
+                        }
+                    }
+            }
 
-            if !manager.currentToolName.isEmpty {
+            Spacer()
+
+            if manager.toolDetectionState == .failed {
+                yellowDotTrail
+            }
+
+            if !manager.currentToolName.isEmpty && manager.toolDetectionState != .detecting {
                 Text(manager.currentToolName)
                     .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.accent)
@@ -141,6 +163,18 @@ struct ChatInterfaceView: View {
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
         .background(DS.Colors.surface)
+        .animation(.easeInOut(duration: 0.2), value: manager.toolDetectionState)
+    }
+
+    private var yellowDotTrail: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<3, id: \.self) { i in
+                Circle()
+                    .fill(DS.Colors.warning)
+                    .frame(width: 4, height: 4)
+                    .opacity(0.4 + Double(i) * 0.3)
+            }
+        }
     }
 
     // MARK: - Messages
