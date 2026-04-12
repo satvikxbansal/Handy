@@ -397,7 +397,7 @@ final class HandyManager: NSObject, ObservableObject {
                 if let idx = messages.lastIndex(where: { $0.id == assistantMsg.id }) {
                     messages[idx] = ChatMessage(
                         role: .assistant,
-                        content: cleanedText,
+                         content: cleanedText,
                         toolName: toolName,
                         isStreaming: false
                     )
@@ -631,8 +631,8 @@ extension HandyManager: HotkeyManagerDelegate {
             guard let self else { return }
             switch action {
             case .openChat:
-                print("🤚 Opening chat panel...")
-                self.chatPanelManager?.show()
+                print("🤚 Toggling chat panel...")
+                self.chatPanelManager?.toggle()
             case .voiceInput:
                 if self.voiceState == .listening {
                     self.stopVoiceInput()

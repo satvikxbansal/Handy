@@ -7,7 +7,6 @@ final class ChatPanelManager: NSObject {
     private var panel: KeyablePanel?
     private var statusItem: NSStatusItem?
     private var isVisible = false
-    private var clickOutsideMonitor: Any?
 
     init(statusItem: NSStatusItem?) {
         self.statusItem = statusItem
@@ -32,23 +31,11 @@ final class ChatPanelManager: NSObject {
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         isVisible = true
-
-        clickOutsideMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
-            guard let self, let panel = self.panel else { return }
-            let clickLocation = NSEvent.mouseLocation
-            if !panel.frame.contains(clickLocation) {
-                self.hide()
-            }
-        }
     }
 
     func hide() {
         panel?.orderOut(nil)
         isVisible = false
-        if let monitor = clickOutsideMonitor {
-            NSEvent.removeMonitor(monitor)
-            clickOutsideMonitor = nil
-        }
     }
 
     private func createPanel() {
