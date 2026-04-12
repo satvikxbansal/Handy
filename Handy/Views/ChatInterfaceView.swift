@@ -252,11 +252,22 @@ struct ChatInterfaceView: View {
             HStack(spacing: DS.Spacing.sm) {
                 voiceButton
 
-                TextField("Ask anything...", text: $inputText)
-                    .textFieldStyle(.plain)
-                    .font(DS.Typography.body)
-                    .foregroundColor(DS.Colors.textPrimary)
-                    .onSubmit { sendCurrentInput() }
+                ZStack(alignment: .leading) {
+                    if manager.voiceState == .listening {
+                        Text(manager.pendingTranscript.isEmpty ? "Listening..." : manager.pendingTranscript)
+                            .font(DS.Typography.body)
+                            .foregroundColor(manager.pendingTranscript.isEmpty ? DS.Colors.textTertiary : DS.Colors.textPrimary)
+                            .lineLimit(3)
+                            .animation(.easeInOut(duration: 0.1), value: manager.pendingTranscript)
+                    } else {
+                        TextField("Ask anything...", text: $inputText)
+                            .textFieldStyle(.plain)
+                            .font(DS.Typography.body)
+                            .foregroundColor(DS.Colors.textPrimary)
+                            .onSubmit { sendCurrentInput() }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 sendButton
             }

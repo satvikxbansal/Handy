@@ -19,8 +19,8 @@ A native macOS menu bar assistant that sees your screen, understands context, an
 
 | Shortcut | Action |
 |----------|--------|
-| `Shift + Space` | Start/stop voice input |
 | `Shift + Space + O` | Open chat interface |
+| `Control + Z` | Start/stop voice input (help cursor) |
 
 Custom hotkeys planned for v2.
 
@@ -42,7 +42,7 @@ Custom hotkeys planned for v2.
    - **Speech Recognition** (for Apple STT)
 4. Click the hand icon in the menu bar, open Settings
 5. Add your Claude API key in the **Brain** section
-6. Start using: `Shift + Space + O` to open chat, or `Shift + Space` for voice
+6. Start using: `Shift + Space + O` to open chat, or `Control + Z` for voice input
 
 ### API Keys
 
@@ -88,7 +88,7 @@ Handy/
 
 ## How It Works
 
-1. **Trigger** — Shift+Space starts voice recording; Shift+Space+O opens the chat panel
+1. **Trigger** — Control+Z starts voice recording; Shift+Space+O opens the chat panel
 2. **Capture** — ScreenCaptureKit takes JPEG screenshots of all displays (max 1280px, 0.8 quality)
 3. **Context** — Screenshots + user message + last 10 conversation turns + system prompt sent to Claude
 4. **Streaming** — SSE response streams token-by-token into the chat bubble

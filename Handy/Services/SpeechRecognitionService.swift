@@ -7,6 +7,7 @@ enum SpeechRecognitionError: LocalizedError {
     case recognizerUnavailable
     case audioEngineError(Error)
     case recognitionFailed(Error)
+    case noAudioInput
 
     var errorDescription: String? {
         switch self {
@@ -14,19 +15,11 @@ enum SpeechRecognitionError: LocalizedError {
         case .recognizerUnavailable: return "Speech recognizer is not available for your locale."
         case .audioEngineError(let err): return "Audio engine error: \(err.localizedDescription)"
         case .recognitionFailed(let err): return "Recognition failed: \(err.localizedDescription)"
+        case .noAudioInput: return "No microphone input available. Check System Settings > Privacy > Microphone."
         }
     }
 }
 
-/// Apple Speech Recognition service — default STT provider.
-/// Uses on-device recognition when available for lower latency.
-///
-/// Accuracy notes (from Apple docs):
-/// - SFSpeechRecognizer supports 50+ locales
-/// - On-device mode (requiresOnDeviceRecognition) available on Apple Silicon
-/// - Server-based gives better accuracy for complex speech but requires network
-/// - taskHint = .dictation optimizes for free-form speech
-/// - contextualStrings can boost recognition of domain-specific terms
 final class SpeechRecognitionService: NSObject, ObservableObject {
     static let shared = SpeechRecognitionService()
 
@@ -38,6 +31,7 @@ final class SpeechRecognitionService: NSObject, ObservableObject {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
+    private var onTranscriptCallback: ((String, Bool) -> Void)?
 
     private override init() {
         self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
@@ -58,15 +52,16 @@ final class SpeechRecognitionService: NSObject, ObservableObject {
         }
 
         stopListening()
+        self.onTranscriptCallback = onTranscript
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        request.taskHint = .dictation
+        request.addsPunctuation = true
 
         if speechRecognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
         }
-
-        request.taskHint = .dictation
 
         request.contextualStrings = [
             "API", "Claude", "OpenAI", "screenshot",
@@ -77,16 +72,28 @@ final class SpeechRecognitionService: NSObject, ObservableObject {
         recognitionRequest = request
 
         let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        let hwFormat = inputNode.inputFormat(forBus: 0)
 
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+        guard hwFormat.channelCount > 0 && hwFormat.sampleRate > 0 else {
+            throw SpeechRecognitionError.noAudioInput
+        }
+
+        let recordingFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: hwFormat.sampleRate,
+            channels: 1,
+            interleaved: false
+        )!
+
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: recordingFormat) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)
         }
 
+        audioEngine.prepare()
         do {
-            audioEngine.prepare()
             try audioEngine.start()
         } catch {
+            inputNode.removeTap(onBus: 0)
             throw SpeechRecognitionError.audioEngineError(error)
         }
 
@@ -97,14 +104,21 @@ final class SpeechRecognitionService: NSObject, ObservableObject {
                 let text = result.bestTranscription.formattedString
                 DispatchQueue.main.async {
                     self.transcript = text
-                    onTranscript(text, result.isFinal)
+                    self.onTranscriptCallback?(text, result.isFinal)
                 }
             }
 
             if let error {
-                DispatchQueue.main.async {
-                    self.error = .recognitionFailed(error)
-                    self.stopListening()
+                let nsError = error as NSError
+                // Code 1 = recognition finished/cancelled normally; code 216 = no speech detected
+                let isNormalTermination = nsError.domain == "kAFAssistantErrorDomain" &&
+                    (nsError.code == 1 || nsError.code == 216)
+
+                if !isNormalTermination {
+                    DispatchQueue.main.async {
+                        self.error = .recognitionFailed(error)
+                    }
+                    print("⚠️ SpeechRecognition error: \(error)")
                 }
             }
         }
@@ -112,16 +126,20 @@ final class SpeechRecognitionService: NSObject, ObservableObject {
         DispatchQueue.main.async {
             self.isListening = true
             self.transcript = ""
+            self.error = nil
         }
     }
 
     func stopListening() {
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
         recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
         recognitionRequest = nil
+        recognitionTask?.finish()
         recognitionTask = nil
+        onTranscriptCallback = nil
 
         DispatchQueue.main.async {
             self.isListening = false

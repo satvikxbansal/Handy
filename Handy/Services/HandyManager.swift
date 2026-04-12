@@ -39,6 +39,7 @@ final class HandyManager: NSObject, ObservableObject {
     // MARK: - Permissions
 
     @Published var hasAccessibilityPermission = false
+    @Published var hasScreenRecordingPermission = false
 
     // MARK: - Dependencies
 
@@ -59,10 +60,11 @@ final class HandyManager: NSObject, ObservableObject {
 
     // MARK: - Internal
 
-    private var pendingTranscript = ""
+    @Published var pendingTranscript = ""
     private var loadingTimer: Timer?
     private var currentResponseTask: Task<Void, Never>?
     private var toolDetectionTask: Task<Void, Never>?
+    private var speechRecognitionErrorObserver: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
     private var permissionTimer: Timer?
 
@@ -158,6 +160,9 @@ final class HandyManager: NSObject, ObservableObject {
 
     func start() {
         refreshPermissions()
+        if !hasAccessibilityPermission {
+            requestAccessibilityPermission()
+        }
         loadCurrentToolContext()
         bindTutorMode()
         startPermissionPolling()
@@ -166,6 +171,7 @@ final class HandyManager: NSObject, ObservableObject {
     func stop() {
         hotkeyManager.stop()
         speechService.stopListening()
+        speechRecognitionErrorObserver = nil
         ttsService.stop()
         stopTutorIdleDetection()
         currentResponseTask?.cancel()
@@ -188,6 +194,7 @@ final class HandyManager: NSObject, ObservableObject {
             if !previouslyHadAccessibility {
                 print("⚠️ Handy: Accessibility NOT granted — hotkeys won't work")
                 print("   Go to System Settings > Privacy & Security > Accessibility")
+                print("   If Handy is already listed, toggle it OFF then ON (Xcode rebuilds change the code signature)")
             }
             hotkeyManager.stop()
         }
@@ -297,12 +304,27 @@ final class HandyManager: NSObject, ObservableObject {
 
         currentResponseTask = Task { @MainActor in
             do {
-                let captures = try await ScreenCaptureService.captureAllScreens()
-                guard !Task.isCancelled else { return }
+                var images: [(data: Data, label: String)] = []
+                var captures: [HandyScreenCapture] = []
+                do {
+                    captures = try await ScreenCaptureService.captureAllScreens()
+                    guard !Task.isCancelled else { return }
+                    hasScreenRecordingPermission = true
+                    images = captures.map { cap in
+                        let dims = " (image dimensions: \(cap.screenshotWidthPx)x\(cap.screenshotHeightPx) pixels)"
+                        return (data: cap.imageData, label: cap.label + dims)
+                    }
+                } catch {
+                    let desc = error.localizedDescription.lowercased()
+                    let isPermission = error is ScreenCaptureError ||
+                        desc.contains("declined") || desc.contains("tcc") ||
+                        desc.contains("permission") || desc.contains("denied")
 
-                let images = captures.map { cap in
-                    let dims = " (image dimensions: \(cap.screenshotWidthPx)x\(cap.screenshotHeightPx) pixels)"
-                    return (data: cap.imageData, label: cap.label + dims)
+                    if isPermission {
+                        hasScreenRecordingPermission = false
+                        errorMessage = "Screen Recording permission needed. Toggle Handy OFF then ON in System Settings > Privacy & Security > Screen Recording, then relaunch."
+                    }
+                    print("⚠️ Screen capture failed, proceeding without screenshots: \(error)")
                 }
 
                 let history = historyManager.recentTurns(for: toolName)
@@ -365,13 +387,13 @@ final class HandyManager: NSObject, ObservableObject {
                 historyManager.addTurn(turn, for: toolName)
 
                 let pointResult = PointParser.parse(from: finalText)
-                if let coord = pointResult.coordinate {
+                if let coord = pointResult.coordinate, !captures.isEmpty {
                     let targetCapture = captures.first { cap in
                         if let screen = pointResult.screenNumber {
                             return cap.label.contains("screen \(screen)")
                         }
                         return cap.isCursorScreen
-                    } ?? captures.first!
+                    } ?? captures[0]
 
                     let globalPoint = PointParser.mapToScreenCoordinates(point: coord, capture: targetCapture)
                     overlayManager.pointAt(globalPoint, label: pointResult.label ?? "")
@@ -407,7 +429,7 @@ final class HandyManager: NSObject, ObservableObject {
         Task { @MainActor in
             let authorized = await speechService.requestAuthorization()
             guard authorized else {
-                errorMessage = "Speech recognition not authorized."
+                errorMessage = "Speech recognition not authorized. Go to System Settings > Privacy & Security > Speech Recognition."
                 voiceState = .idle
                 return
             }
@@ -416,10 +438,17 @@ final class HandyManager: NSObject, ObservableObject {
                 try speechService.startListening { [weak self] transcript, isFinal in
                     guard let self else { return }
                     self.pendingTranscript = transcript
-                    if isFinal {
-                        self.finishVoiceInput()
-                    }
                 }
+
+                speechRecognitionErrorObserver = speechService.$error
+                    .compactMap { $0 }
+                    .sink { [weak self] err in
+                        guard let self else { return }
+                        self.errorMessage = err.errorDescription
+                        if self.voiceState == .listening {
+                            self.voiceState = .idle
+                        }
+                    }
             } catch {
                 errorMessage = error.localizedDescription
                 voiceState = .idle
@@ -428,22 +457,15 @@ final class HandyManager: NSObject, ObservableObject {
     }
 
     func stopVoiceInput() {
-        speechService.stopListening()
-        if !pendingTranscript.isEmpty {
-            finishVoiceInput()
-        } else {
-            voiceState = .idle
-        }
-    }
-
-    private func finishVoiceInput() {
-        speechService.stopListening()
         let transcript = pendingTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !transcript.isEmpty else {
-            voiceState = .idle
-            return
+        speechService.stopListening()
+        speechRecognitionErrorObserver = nil
+        voiceState = .idle
+
+        if !transcript.isEmpty {
+            sendMessage(transcript)
+            pendingTranscript = ""
         }
-        sendMessage(transcript)
     }
 
     // MARK: - Tutor Mode (idle-triggered observations)

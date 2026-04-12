@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let logMsg = """
         Handy launched successfully
           Accessibility: \(AXIsProcessTrusted() ? "GRANTED" : "NOT GRANTED")
+          Hotkeys: Shift+Space+O = Open Chat, Control+Z = Voice Input
         """
         print(logMsg)
         writeLog(logMsg)

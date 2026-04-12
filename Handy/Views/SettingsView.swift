@@ -214,8 +214,8 @@ struct SettingsView: View {
                 )
                 triggerRow(
                     label: "Voice Input",
-                    shortcut: "⇧ Space",
-                    description: "Start/stop voice input"
+                    shortcut: "⌃ Z",
+                    description: "Start/stop voice input (help cursor)"
                 )
             }
 

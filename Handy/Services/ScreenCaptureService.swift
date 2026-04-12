@@ -6,12 +6,15 @@ enum ScreenCaptureError: LocalizedError {
     case noDisplaysFound
     case captureFailedForAllDisplays
     case jpegEncodingFailed
+    case screenRecordingNotAllowed
 
     var errorDescription: String? {
         switch self {
         case .noDisplaysFound: return "No displays found for capture"
         case .captureFailedForAllDisplays: return "Screen capture failed on all displays"
         case .jpegEncodingFailed: return "Failed to encode screenshot as JPEG"
+        case .screenRecordingNotAllowed:
+            return "Screen Recording permission required. Go to System Settings > Privacy & Security > Screen Recording and enable Handy."
         }
     }
 }
@@ -20,9 +23,37 @@ enum ScreenCaptureService {
     private static let maxDimension = 1280
     private static let jpegQuality: CGFloat = 0.8
 
+    private static func fetchShareableContent() async throws -> SCShareableContent {
+        do {
+            return try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        } catch {
+            if isPermissionError(error) {
+                throw ScreenCaptureError.screenRecordingNotAllowed
+            }
+            throw error
+        }
+    }
+
+    private static func isPermissionError(_ error: Error) -> Bool {
+        let desc = error.localizedDescription.lowercased()
+        let nsError = error as NSError
+
+        if desc.contains("declined") || desc.contains("tcc") || desc.contains("permission") ||
+           desc.contains("not authorized") || desc.contains("denied") {
+            return true
+        }
+
+        // SCStreamError.userDeclined = -3801
+        if nsError.domain == "com.apple.screencapturekit.error" || nsError.code == -3801 {
+            return true
+        }
+
+        return false
+    }
+
     /// Captures all connected screens, cursor screen first.
     static func captureAllScreens() async throws -> [HandyScreenCapture] {
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        let content = try await fetchShareableContent()
 
         guard !content.displays.isEmpty else {
             throw ScreenCaptureError.noDisplaysFound
@@ -118,7 +149,7 @@ enum ScreenCaptureService {
 
     /// Captures only the focused window of the frontmost application.
     static func captureFocusedWindow() async throws -> [HandyScreenCapture] {
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        let content = try await fetchShareableContent()
         let ownBundleID = Bundle.main.bundleIdentifier
 
         guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {

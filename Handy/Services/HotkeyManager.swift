@@ -3,7 +3,7 @@ import Carbon.HIToolbox
 
 enum HotkeyAction {
     case openChat        // Shift + Space + O
-    case voiceInput      // Shift + Space
+    case voiceInput      // Control + Z
 }
 
 protocol HotkeyManagerDelegate: AnyObject {
@@ -11,20 +11,19 @@ protocol HotkeyManagerDelegate: AnyObject {
 }
 
 /// Global hotkey listener using CGEvent tap.
-/// Default triggers: Shift+Space = voice input, Shift+Space+O = open chat.
-/// Architecture supports future custom hotkey configuration.
+/// Triggers: Shift+Space+O = open chat, Control+Z = voice input (help cursor).
 final class HotkeyManager {
     weak var delegate: HotkeyManagerDelegate?
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
+    // Shift+Space+O state tracking
     private var shiftHeld = false
     private var spacePressed = false
     private var waitingForO = false
-    private var spaceTimestamp: Date?
-
-    private let oKeyTimeout: TimeInterval = 0.4
+    private var oKeyTimer: DispatchWorkItem?
+    private let oKeyTimeout: TimeInterval = 0.5
 
     deinit {
         stop()
@@ -56,6 +55,7 @@ final class HotkeyManager {
         ) else {
             print("❌ HotkeyManager: CGEvent.tapCreate FAILED — Accessibility permission not granted?")
             print("   Go to System Settings > Privacy & Security > Accessibility and add this app")
+            print("   If already granted, toggle OFF then ON (code signature changes on rebuild)")
             return
         }
         print("✅ HotkeyManager: event tap created successfully")
@@ -67,6 +67,8 @@ final class HotkeyManager {
     }
 
     func stop() {
+        oKeyTimer?.cancel()
+        oKeyTimer = nil
         if let source = runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
             self.runLoopSource = nil
@@ -85,37 +87,53 @@ final class HotkeyManager {
             return
         }
 
+        let flags = event.flags
+
         switch type {
         case .flagsChanged:
-            let flags = event.flags
             shiftHeld = flags.contains(.maskShift)
             if !shiftHeld {
-                resetState()
+                resetShiftSpaceState()
             }
 
         case .keyDown:
             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
 
-            // Space = 49
-            if keyCode == 49 && shiftHeld && !spacePressed {
-                spacePressed = true
-                spaceTimestamp = Date()
-                waitingForO = true
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + oKeyTimeout) { [weak self] in
-                    guard let self, self.waitingForO, self.spacePressed else { return }
-                    self.waitingForO = false
-                    self.delegate?.hotkeyTriggered(.voiceInput)
-                    self.resetState()
-                }
+            // Control+Z → voice input (help cursor)
+            // Z = keycode 6, check Control is held and Shift is NOT held
+            if keyCode == 6
+                && flags.contains(.maskControl)
+                && !flags.contains(.maskShift)
+                && !flags.contains(.maskCommand)
+                && !flags.contains(.maskAlternate)
+            {
+                print("🔑 HotkeyManager: Control+Z detected → voiceInput")
+                delegate?.hotkeyTriggered(.voiceInput)
+                return
             }
 
-            // O = 31
+            // Shift+Space → start waiting for O
+            // Space = keycode 49
+            if keyCode == 49 && shiftHeld && !spacePressed {
+                spacePressed = true
+                waitingForO = true
+
+                oKeyTimer?.cancel()
+                let timer = DispatchWorkItem { [weak self] in
+                    guard let self else { return }
+                    self.resetShiftSpaceState()
+                }
+                oKeyTimer = timer
+                DispatchQueue.main.asyncAfter(deadline: .now() + oKeyTimeout, execute: timer)
+            }
+
+            // O = keycode 31 — complete Shift+Space+O
             if keyCode == 31 && waitingForO && spacePressed && shiftHeld {
-                waitingForO = false
-                spacePressed = false
+                oKeyTimer?.cancel()
+                oKeyTimer = nil
+                print("🔑 HotkeyManager: Shift+Space+O detected → openChat")
                 delegate?.hotkeyTriggered(.openChat)
-                resetState()
+                resetShiftSpaceState()
             }
 
         case .keyUp:
@@ -129,9 +147,10 @@ final class HotkeyManager {
         }
     }
 
-    private func resetState() {
+    private func resetShiftSpaceState() {
         spacePressed = false
         waitingForO = false
-        spaceTimestamp = nil
+        oKeyTimer?.cancel()
+        oKeyTimer = nil
     }
 }
