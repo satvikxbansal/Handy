@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>LSUIElement</key>
+	<true/>
+	<key>CFBundleName</key>
+	<string>Handy</string>
+	<key>CFBundleDisplayName</key>
+	<string>Handy</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.handydotapp.handy</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Handy needs microphone access for voice input so you can speak your questions.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Handy uses speech recognition to transcribe your voice input into text.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Handy captures your screen so the AI can see what you see and help you navigate.</string>
+</dict>
+</plist>
