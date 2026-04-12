@@ -22,6 +22,7 @@ struct ChatInterfaceView: View {
             }
         }
         .background(DS.Colors.background)
+        .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.2), value: showSettings)
     }
 
@@ -32,7 +33,7 @@ struct ChatInterfaceView: View {
             HStack(spacing: DS.Spacing.sm) {
                 statusDot
                 Text("Handy")
-                    .font(DS.Typography.titleMedium)
+                    .font(.system(size: 16, weight: .bold, design: .default))
                     .foregroundColor(DS.Colors.textPrimary)
             }
 

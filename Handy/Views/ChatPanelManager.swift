@@ -58,6 +58,7 @@ final class ChatPanelManager: NSObject {
         let chatView = ChatInterfaceView()
             .environmentObject(HandyManager.shared)
             .environmentObject(AppSettings.shared)
+            .preferredColorScheme(.dark)
 
         let hostingView = NSHostingView(rootView: chatView)
         hostingView.frame = NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight)
@@ -79,6 +80,7 @@ final class ChatPanelManager: NSObject {
         p.minSize = NSSize(width: 360, height: 400)
         p.maxSize = NSSize(width: 600, height: 900)
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        p.appearance = NSAppearance(named: .darkAqua)
 
         panel = p
     }

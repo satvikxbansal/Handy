@@ -40,6 +40,7 @@ struct SettingsView: View {
             .padding(DS.Spacing.lg)
         }
         .background(DS.Colors.background)
+        .preferredColorScheme(.dark)
         .onAppear { loadExistingKeys() }
     }
 
