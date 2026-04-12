@@ -397,7 +397,7 @@ final class HandyManager: NSObject, ObservableObject {
 
                     let globalPoint = PointParser.mapToScreenCoordinates(point: coord, capture: targetCapture)
                     overlayManager.pointAt(globalPoint, label: pointResult.label ?? "")
-                }
+                 }
 
                 ttsService.speak(cleanedText)
 
