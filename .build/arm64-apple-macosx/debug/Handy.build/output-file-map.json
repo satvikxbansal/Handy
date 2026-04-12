@@ -2,13 +2,6 @@
   "": {
     "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/master.swiftdeps"
   },
-  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/AppDelegate.swift": {
-    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.d",
-    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.swift.o",
-    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate~partial.swiftmodule",
-    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.swiftdeps",
-    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.dia"
-  },
   "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift": {
     "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.d",
     "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swift.o",

@@ -24,10 +24,6 @@
       "inputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/AppDelegate.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift"
         },
         {
@@ -111,7 +107,6 @@
       "moduleName" : "Handy",
       "moduleOutputPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules/Handy.swiftmodule",
       "objects" : [
-        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.swift.o",
@@ -188,10 +183,6 @@
       ],
       "outputFileMapPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/output-file-map.json",
       "outputs" : [
-        {
-          "kind" : "file",
-          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.swift.o"
-        },
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swift.o"
@@ -271,7 +262,6 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
-        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/AppDelegate.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift",
@@ -306,7 +296,6 @@
       "-package-name",
       "handy",
       "-c",
-      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/AppDelegate.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift",
@@ -424,10 +413,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/AppDelegate.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift"
         },
         {
@@ -507,10 +492,6 @@
         {
           "kind" : "virtual",
           "name" : "<link-file-list>"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppDelegate.swift.o"
         },
         {
           "kind" : "file",

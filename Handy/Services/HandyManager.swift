@@ -171,11 +171,15 @@ final class HandyManager: NSObject, ObservableObject {
         if hasAccessibilityPermission {
             hotkeyManager.start()
         } else {
+            if !previouslyHadAccessibility {
+                print("⚠️ Handy: Accessibility NOT granted — hotkeys won't work")
+                print("   Go to System Settings > Privacy & Security > Accessibility")
+            }
             hotkeyManager.stop()
         }
 
         if !previouslyHadAccessibility && hasAccessibilityPermission {
-            print("✅ Handy: Accessibility permission granted")
+            print("✅ Handy: Accessibility permission granted — starting hotkey manager")
         }
     }
 
@@ -514,10 +518,12 @@ final class HandyManager: NSObject, ObservableObject {
 
 extension HandyManager: HotkeyManagerDelegate {
     nonisolated func hotkeyTriggered(_ action: HotkeyAction) {
+        print("🔑 Hotkey triggered: \(action)")
         Task { @MainActor [weak self] in
             guard let self else { return }
             switch action {
             case .openChat:
+                print("🤚 Opening chat panel...")
                 self.chatPanelManager?.show()
             case .voiceInput:
                 if self.voiceState == .listening {

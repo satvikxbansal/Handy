@@ -31,7 +31,10 @@ final class HotkeyManager {
     }
 
     func start() {
-        guard eventTap == nil else { return }
+        guard eventTap == nil else {
+            print("🔑 HotkeyManager: event tap already running")
+            return
+        }
 
         let eventMask: CGEventMask =
             (1 << CGEventType.flagsChanged.rawValue) |
@@ -51,8 +54,11 @@ final class HotkeyManager {
             },
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
+            print("❌ HotkeyManager: CGEvent.tapCreate FAILED — Accessibility permission not granted?")
+            print("   Go to System Settings > Privacy & Security > Accessibility and add this app")
             return
         }
+        print("✅ HotkeyManager: event tap created successfully")
 
         eventTap = tap
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)

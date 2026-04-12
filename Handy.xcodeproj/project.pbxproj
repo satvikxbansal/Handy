@@ -3,20 +3,34 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
+/* Begin PBXFileReference section */
+		D69085732F8BC4F6007F37DE /* Handy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Handy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		00000000000000000010 /* Handy */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Handy; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		00000000000000000120 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
-		00000000000000000001 /* Handy */ = {
+		00000000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				00000000000000000010 /* Handy */,
+				D69085732F8BC4F6007F37DE /* Handy.app */,
 			);
-			sourceTree = "<group>";
-		};
-		00000000000000000010 /* Handy */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Handy;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -39,7 +53,7 @@
 			);
 			name = Handy;
 			productName = Handy;
-			productReference = 00000000000000000140 /* Handy.app */;
+			productReference = D69085732F8BC4F6007F37DE /* Handy.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -65,8 +79,8 @@
 				en,
 				Base,
 			);
-			mainGroup = 00000000000000000001 /* Handy */;
-			productRefGroup = 00000000000000000001 /* Handy */;
+			mainGroup = 00000000000000000001;
+			productRefGroup = 00000000000000000001;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -74,26 +88,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXSourcesBuildPhase section */
-		00000000000000000110 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXSourcesBuildPhase section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		00000000000000000120 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		00000000000000000130 /* Resources */ = {
@@ -105,15 +99,15 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXFileReference section */
-		00000000000000000140 /* Handy.app */ = {
-			isa = PBXFileReference;
-			explicitFileType = wrapper.application;
-			includeInIndex = 0;
-			path = Handy.app;
-			sourceTree = BUILT_PRODUCTS_DIR;
+/* Begin PBXSourcesBuildPhase section */
+		00000000000000000110 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXFileReference section */
+/* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		00000000000000000310 /* Debug */ = {
@@ -232,7 +226,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = 00000000000000000200 /* Project object */;
 }
