@@ -397,7 +397,7 @@ final class HandyManager: NSObject, ObservableObject {
 
                     let globalPoint = PointParser.mapToScreenCoordinates(point: coord, capture: targetCapture)
                     overlayManager.pointAt(globalPoint, label: pointResult.label ?? "")
-                 }
+                    }
 
                 ttsService.speak(cleanedText)
 
@@ -442,15 +442,24 @@ final class HandyManager: NSObject, ObservableObject {
 
                 speechRecognitionErrorObserver = speechService.$error
                     .compactMap { $0 }
+                    .receive(on: RunLoop.main)
                     .sink { [weak self] err in
-                        guard let self else { return }
+                        guard let self, self.voiceState == .listening else { return }
                         self.errorMessage = err.errorDescription
-                        if self.voiceState == .listening {
-                            self.voiceState = .idle
-                        }
+                        self.speechService.stopListening()
+                        self.speechRecognitionErrorObserver = nil
+                        self.voiceState = .idle
                     }
+            } catch let err as SpeechRecognitionError {
+                errorMessage = err.errorDescription
+                voiceState = .idle
             } catch {
-                errorMessage = error.localizedDescription
+                let desc = error.localizedDescription.lowercased()
+                if desc.contains("siri") && desc.contains("dictation") {
+                    errorMessage = SpeechRecognitionError.siriDisabled.errorDescription
+                } else {
+                    errorMessage = error.localizedDescription
+                }
                 voiceState = .idle
             }
         }

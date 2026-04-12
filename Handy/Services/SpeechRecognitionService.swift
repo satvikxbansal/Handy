@@ -8,6 +8,7 @@ enum SpeechRecognitionError: LocalizedError {
     case audioEngineError(Error)
     case recognitionFailed(Error)
     case noAudioInput
+    case siriDisabled
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +17,7 @@ enum SpeechRecognitionError: LocalizedError {
         case .audioEngineError(let err): return "Audio engine error: \(err.localizedDescription)"
         case .recognitionFailed(let err): return "Recognition failed: \(err.localizedDescription)"
         case .noAudioInput: return "No microphone input available. Check System Settings > Privacy > Microphone."
+        case .siriDisabled: return "Siri & Dictation must be enabled. Go to System Settings > Siri (enable Siri) and System Settings > Keyboard > Dictation (enable Dictation), then try again."
         }
     }
 }
@@ -59,9 +61,9 @@ final class SpeechRecognitionService: NSObject, ObservableObject {
         request.taskHint = .dictation
         request.addsPunctuation = true
 
-        if speechRecognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-        }
+        // Don't require on-device — it fails if the model isn't downloaded.
+        // Apple will prefer on-device automatically when available.
+        request.requiresOnDeviceRecognition = false
 
         request.contextualStrings = [
             "API", "Claude", "OpenAI", "screenshot",
@@ -110,16 +112,29 @@ final class SpeechRecognitionService: NSObject, ObservableObject {
 
             if let error {
                 let nsError = error as NSError
-                // Code 1 = recognition finished/cancelled normally; code 216 = no speech detected
-                let isNormalTermination = nsError.domain == "kAFAssistantErrorDomain" &&
-                    (nsError.code == 1 || nsError.code == 216)
 
-                if !isNormalTermination {
-                    DispatchQueue.main.async {
-                        self.error = .recognitionFailed(error)
-                    }
-                    print("⚠️ SpeechRecognition error: \(error)")
+                // kAFAssistantErrorDomain codes that are normal/transient:
+                //   1    = recognition finished/cancelled
+                //   216  = request was cancelled
+                //   1101 = assets not installed yet (transient on first use)
+                //   1107 = request timed out (will restart)
+                //   1110 = no speech detected yet (fires early, not fatal)
+                let ignoredCodes: Set<Int> = [1, 216, 1101, 1107, 1110]
+                let isIgnorable = nsError.domain == "kAFAssistantErrorDomain"
+                    && ignoredCodes.contains(nsError.code)
+
+                if isIgnorable {
+                    print("ℹ️ SpeechRecognition (non-fatal, code \(nsError.code)): \(nsError.localizedDescription)")
+                    return
                 }
+
+                let isSiriDisabled = nsError.domain == "kLSRErrorDomain" && nsError.code == 201
+                    || nsError.localizedDescription.lowercased().contains("siri and dictation are disabled")
+
+                DispatchQueue.main.async {
+                    self.error = isSiriDisabled ? .siriDisabled : .recognitionFailed(error)
+                }
+                print("⚠️ SpeechRecognition error: \(error)")
             }
         }
 
