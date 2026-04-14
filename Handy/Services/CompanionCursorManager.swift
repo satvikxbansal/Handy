@@ -166,6 +166,53 @@ struct CompanionCursorView: View {
         _isCursorOnThisScreen = State(initialValue: screenFrame.contains(mouse))
     }
 
+    // MARK: - Edge-Aware Positioning
+
+    private let edgeMargin: CGFloat = 12
+
+    /// Computes a bubble position that keeps the bubble fully visible within the screen,
+    /// flipping horizontally or vertically when the cursor is near edges.
+    private func bubblePosition(
+        bubbleSize: CGSize,
+        preferredXOffset: CGFloat,
+        preferredYOffset: CGFloat
+    ) -> CGPoint {
+        let w = max(bubbleSize.width, 30)
+        let h = max(bubbleSize.height, 20)
+
+        let rightX = cursorPosition.x + preferredXOffset + w / 2
+        let leftX  = cursorPosition.x - preferredXOffset - w / 2
+
+        let x: CGFloat
+        if rightX + w / 2 + edgeMargin > screenFrame.width {
+            x = max(edgeMargin + w / 2, leftX)
+        } else if leftX - w / 2 < edgeMargin {
+            x = min(screenFrame.width - edgeMargin - w / 2, rightX)
+        } else {
+            x = rightX
+        }
+
+        let belowY = cursorPosition.y + abs(preferredYOffset) + h / 2
+        let aboveY = cursorPosition.y - abs(preferredYOffset) - h / 2
+
+        let y: CGFloat
+        if preferredYOffset >= 0 {
+            if belowY + h / 2 + edgeMargin > screenFrame.height {
+                y = max(edgeMargin + h / 2, aboveY)
+            } else {
+                y = belowY
+            }
+        } else {
+            if aboveY - h / 2 < edgeMargin {
+                y = min(screenFrame.height - edgeMargin - h / 2, belowY)
+            } else {
+                y = aboveY
+            }
+        }
+
+        return CGPoint(x: x, y: y)
+    }
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.001)
@@ -195,7 +242,7 @@ struct CompanionCursorView: View {
                     )
                     .scaleEffect(navigationBubbleScale)
                     .opacity(navigationBubbleOpacity)
-                    .position(x: cursorPosition.x + 10 + (navigationBubbleSize.width / 2), y: cursorPosition.y + 18)
+                    .position(bubblePosition(bubbleSize: navigationBubbleSize, preferredXOffset: 10, preferredYOffset: 18))
                     .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
                     .animation(.spring(response: 0.4, dampingFraction: 0.6), value: navigationBubbleScale)
                     .animation(.easeOut(duration: 0.5), value: navigationBubbleOpacity)
@@ -224,7 +271,7 @@ struct CompanionCursorView: View {
                         }
                     )
                     .opacity(transcriptBubbleOpacity)
-                    .position(x: cursorPosition.x + 10 + (transcriptBubbleSize.width / 2), y: cursorPosition.y - 12 - (transcriptBubbleSize.height / 2))
+                    .position(bubblePosition(bubbleSize: transcriptBubbleSize, preferredXOffset: 10, preferredYOffset: -12))
                     .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
                     .animation(.easeOut(duration: 0.3), value: transcriptBubbleOpacity)
                     .onPreferenceChange(TranscriptBubbleSizePreferenceKey.self) { transcriptBubbleSize = $0 }
@@ -250,7 +297,7 @@ struct CompanionCursorView: View {
                         }
                     )
                     .opacity(responseBubbleOpacity)
-                    .position(x: cursorPosition.x + 10 + (responseBubbleSize.width / 2), y: cursorPosition.y + 20 + (responseBubbleSize.height / 2))
+                    .position(bubblePosition(bubbleSize: responseBubbleSize, preferredXOffset: 10, preferredYOffset: 20))
                     .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
                     .animation(.easeOut(duration: 0.3), value: responseBubbleOpacity)
                     .onPreferenceChange(ResponseBubbleSizePreferenceKey.self) { responseBubbleSize = $0 }

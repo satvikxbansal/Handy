@@ -271,8 +271,9 @@ final class ClaudeAPIService {
     }
 
     /// Lightweight non-streaming call that identifies the tool/app from a screenshot.
-    /// Returns just the tool name string, or throws on failure.
-    func detectToolName(imageData: Data) async throws -> String {
+    /// `contextHints` provides known info (URL, window title, app name) to ground the LLM
+    /// and prevent hallucination.
+    func detectToolName(imageData: Data, contextHints: String = "") async throws -> String {
         guard let apiKey = KeychainManager.getAPIKey(.claude) else {
             throw ClaudeAPIError.noAPIKey
         }
@@ -280,13 +281,17 @@ final class ClaudeAPIService {
         let base64 = imageData.base64EncodedString()
         let mediaType = detectImageMediaType(for: imageData)
 
-        let prompt = """
+        var prompt = """
         look at this screenshot and identify the specific tool, app, or website the user is actively working in. \
         return ONLY the name — nothing else. examples: "Figma", "VS Code", "Google Docs - Q3 Report", \
         "GitHub - pull request", "Slack - #engineering", "Xcode", "Final Cut Pro". \
-        for browsers, include the site/page name, not "Safari" or "Chrome". \
+        for browsers, identify the WEBSITE being used, not the browser name. \
         keep it short — max 5 words.
         """
+
+        if !contextHints.isEmpty {
+            prompt += "\n\ncontext from the system (use this to ground your answer): \(contextHints)"
+        }
 
         let userContent: [[String: Any]] = [
             [
