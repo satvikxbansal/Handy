@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Manages the floating, draggable chat panel window.
 @MainActor
-final class ChatPanelManager: NSObject {
+final class ChatPanelManager: NSObject, NSWindowDelegate {
     private var panel: KeyablePanel?
     private var statusItem: NSStatusItem?
     private var isVisible = false
@@ -19,7 +19,10 @@ final class ChatPanelManager: NSObject {
     }
 
     func show() {
-        guard !isVisible else { return }
+        if isVisible {
+            FloatingAccessWidgetController.shared.setChatPanelVisible(true)
+            return
+        }
 
         if panel == nil {
             createPanel()
@@ -27,15 +30,18 @@ final class ChatPanelManager: NSObject {
 
         guard let panel else { return }
         positionPanel(panel)
+        HandyManager.shared.noteChatPanelPresentedForMainConversation()
         HandyManager.shared.onChatPanelOpened()
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         isVisible = true
+        FloatingAccessWidgetController.shared.setChatPanelVisible(true)
     }
 
     func hide() {
         panel?.orderOut(nil)
         isVisible = false
+        FloatingAccessWidgetController.shared.setChatPanelVisible(false)
     }
 
     private func createPanel() {
@@ -69,8 +75,14 @@ final class ChatPanelManager: NSObject {
         p.maxSize = NSSize(width: 600, height: 900)
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         p.appearance = NSAppearance(named: .darkAqua)
+        p.delegate = self
 
         panel = p
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        hide()
+        return false
     }
 
     private func positionPanel(_ panel: NSWindow) {

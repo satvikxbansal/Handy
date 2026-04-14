@@ -31,10 +31,16 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(ttsProvider.rawValue, forKey: Keys.ttsProvider) }
     }
 
+    /// When true, a small draggable pill appears while the chat panel is closed (Settings → Trigger).
+    @Published var showFloatingAccessWidget: Bool {
+        didSet { UserDefaults.standard.set(showFloatingAccessWidget, forKey: Keys.showFloatingAccessWidget) }
+    }
+
     private enum Keys {
         static let assistantMode = "handy_assistantMode"
         static let sttProvider = "handy_sttProvider"
         static let ttsProvider = "handy_ttsProvider"
+        static let showFloatingAccessWidget = "handy_showFloatingAccessWidget"
     }
 
     private init() {
@@ -46,5 +52,7 @@ final class AppSettings: ObservableObject {
 
         let ttsRaw = UserDefaults.standard.string(forKey: Keys.ttsProvider) ?? TTSProvider.system.rawValue
         self.ttsProvider = TTSProvider(rawValue: ttsRaw) ?? .system
+
+        self.showFloatingAccessWidget = UserDefaults.standard.object(forKey: Keys.showFloatingAccessWidget) as? Bool ?? false
     }
 }

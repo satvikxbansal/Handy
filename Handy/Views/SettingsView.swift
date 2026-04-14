@@ -219,6 +219,24 @@ struct SettingsView: View {
                 )
             }
 
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Toggle(isOn: $settings.showFloatingAccessWidget) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Floating access widget")
+                            .font(DS.Typography.bodySmall)
+                            .foregroundColor(DS.Colors.textPrimary)
+                        Text("Shows a small draggable pill when chat is closed. Tap it to open Handy.")
+                            .font(DS.Typography.caption)
+                            .foregroundColor(DS.Colors.textTertiary)
+                    }
+                }
+                .toggleStyle(.switch)
+            }
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(DS.Colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "info.circle")
                     .foregroundColor(DS.Colors.textTertiary)

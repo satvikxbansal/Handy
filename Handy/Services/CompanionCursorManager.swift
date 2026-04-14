@@ -310,7 +310,9 @@ struct CompanionCursorView: View {
                 .rotationEffect(.degrees(triangleRotationDegrees))
                 .shadow(color: DS.Colors.overlayCursorBlue, radius: 8 + (buddyFlightScale - 1.0) * 20, x: 0, y: 0)
                 .scaleEffect(buddyFlightScale)
-                .opacity(buddyIsVisibleOnThisScreen && (manager.voiceState == .idle || manager.voiceState == .responding) ? cursorOpacity : 0)
+                .opacity(companionBuddyOpacity(
+                    base: buddyIsVisibleOnThisScreen && (manager.voiceState == .idle || manager.voiceState == .responding) ? cursorOpacity : 0
+                ))
                 .position(cursorPosition)
                 .animation(
                     buddyNavigationMode == .followingCursor
@@ -326,14 +328,18 @@ struct CompanionCursorView: View {
 
             // Waveform — replaces triangle while listening
             CompanionWaveformView()
-                .opacity(buddyIsVisibleOnThisScreen && manager.voiceState == .listening ? cursorOpacity : 0)
+                .opacity(companionBuddyOpacity(
+                    base: buddyIsVisibleOnThisScreen && manager.voiceState == .listening ? cursorOpacity : 0
+                ))
                 .position(cursorPosition)
                 .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
                 .animation(.easeIn(duration: 0.15), value: manager.voiceState)
 
             // Spinner — shown while processing
             CompanionSpinnerView()
-                .opacity(buddyIsVisibleOnThisScreen && manager.voiceState == .processing ? cursorOpacity : 0)
+                .opacity(companionBuddyOpacity(
+                    base: buddyIsVisibleOnThisScreen && manager.voiceState == .processing ? cursorOpacity : 0
+                ))
                 .position(cursorPosition)
                 .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
                 .animation(.easeIn(duration: 0.15), value: manager.voiceState)
@@ -380,6 +386,7 @@ struct CompanionCursorView: View {
             withAnimation { transcriptBubbleOpacity = 0.0 }
             streamResponseBubbleText(newText)
         }
+        .animation(.easeOut(duration: 0.12), value: manager.companionSuppressedForFloatingAccessoryDrag)
         .onChange(of: manager.voiceState) { newState in
             if newState == .listening {
                 responseBubbleHideTask?.cancel()
@@ -393,6 +400,11 @@ struct CompanionCursorView: View {
                 lastShownResponse = ""
             }
         }
+    }
+
+    /// Hides triangle / waveform / spinner while the floating accessory window is being dragged.
+    private func companionBuddyOpacity(base: Double) -> Double {
+        manager.companionSuppressedForFloatingAccessoryDrag ? 0 : base
     }
 
     /// Whether the buddy should be visible on this screen.

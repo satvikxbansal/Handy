@@ -35,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         chatPanelManager = ChatPanelManager(statusItem: nil)
         handyManager.chatPanelManager = chatPanelManager
         handyManager.start()
+        FloatingAccessWidgetController.shared.configure()
 
         let logMsg = """
         Handy launched successfully

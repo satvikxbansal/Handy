@@ -25,6 +25,9 @@ struct ChatInterfaceView: View {
         .background(DS.Colors.background)
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.2), value: showSettings)
+        .onChange(of: manager.chatPanelPresentedContentResetNonce) { _, _ in
+            showSettings = false
+        }
     }
 
     // MARK: - Header

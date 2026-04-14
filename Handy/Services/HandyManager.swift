@@ -32,6 +32,25 @@ final class HandyManager: NSObject, ObservableObject {
     @Published var streamingText = ""
     @Published var loadingVerb = ""
 
+    /// Incremented when the chat panel is shown after being hidden; `ChatInterfaceView` resets to the main conversation (not Settings).
+    @Published private(set) var chatPanelPresentedContentResetNonce: UInt = 0
+
+    /// Hover / click-drag on the floating accessory — white icon vs blue accent.
+    @Published private(set) var floatingAccessoryInteractionHighlighted: Bool = false
+
+    func setFloatingAccessoryInteractionHighlighted(_ highlighted: Bool) {
+        guard floatingAccessoryInteractionHighlighted != highlighted else { return }
+        floatingAccessoryInteractionHighlighted = highlighted
+    }
+
+    /// While dragging the floating accessory window, the blue buddy is hidden so it doesn’t overlap the drag.
+    @Published private(set) var companionSuppressedForFloatingAccessoryDrag: Bool = false
+
+    func setCompanionSuppressedForFloatingAccessoryDrag(_ suppressed: Bool) {
+        guard companionSuppressedForFloatingAccessoryDrag != suppressed else { return }
+        companionSuppressedForFloatingAccessoryDrag = suppressed
+    }
+
     // MARK: - Element Pointing (observed by CompanionCursorView for fly-to animation)
 
     /// Global AppKit screen coordinates of a detected UI element the cursor should fly to.
@@ -248,6 +267,9 @@ final class HandyManager: NSObject, ObservableObject {
 
         let (appName, windowTitle, bundleID) = ScreenCaptureService.focusedAppInfo()
         lastDetectedBundleID = bundleID
+        if bundleID != Bundle.main.bundleIdentifier {
+            lastNonHandyFrontmostInfo = (appName, windowTitle, bundleID)
+        }
         print("🚀 Handy start — app: \"\(appName)\", window: \"\(windowTitle)\", bundle: \(bundleID ?? "nil")")
 
         if currentToolName.isEmpty && !appName.isEmpty && appName != "Unknown" {
@@ -266,9 +288,14 @@ final class HandyManager: NSObject, ObservableObject {
         startPermissionPolling()
         ScreenCaptureService.startTrackingActiveBrowser()
         bindCompanionCursor()
+        startTrackingNonHandyFrontmostApp()
     }
 
     func stop() {
+        if let obs = workspaceActivationObserver {
+            NotificationCenter.default.removeObserver(obs)
+            workspaceActivationObserver = nil
+        }
         hotkeyManager.stop()
         speechService.stopListening()
         speechRecognitionErrorObserver = nil
@@ -322,6 +349,42 @@ final class HandyManager: NSObject, ObservableObject {
         companionCursor.show()
     }
 
+    private func startTrackingNonHandyFrontmostApp() {
+        workspaceActivationObserver = NotificationCenter.default.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+                guard app.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
+                let info = ScreenCaptureService.focusedAppInfo()
+                self.lastNonHandyFrontmostInfo = (info.0, info.1, info.2)
+            }
+        }
+    }
+
+    func noteChatPanelPresentedForMainConversation() {
+        chatPanelPresentedContentResetNonce += 1
+    }
+
+    /// Call from the floating accessory **before** `ChatPanelManager.show()` (e.g. `mouseDown`), so tool/history match the app the user was in.
+    func captureAccessoryChatOpenToolSnapshot() {
+        let own = Bundle.main.bundleIdentifier
+        let frontBid = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        if frontBid != own {
+            let info = ScreenCaptureService.focusedAppInfo()
+            accessoryChatOpenSnapshot = (info.0, info.1, info.2, Date())
+            print("📎 Accessory chat open — snapshot from frontmost: \"\(info.0)\" (\(info.2 ?? "nil"))")
+            return
+        }
+        if let ext = lastNonHandyFrontmostInfo {
+            accessoryChatOpenSnapshot = (ext.appName, ext.windowTitle, ext.bundleID, Date())
+            print("📎 Accessory chat open — snapshot from last non-Handy app: \"\(ext.appName)\" (\(ext.bundleID ?? "nil"))")
+        }
+    }
+
     // MARK: - Tool Context
 
     /// The bundle ID of the app that was active when currentToolName was set.
@@ -332,6 +395,16 @@ final class HandyManager: NSObject, ObservableObject {
     /// Within Chrome/Safari/etc., the last tab/site we keyed chat history to (e.g. `host:github.com`).
     /// Bundle ID does not change when the user switches tabs, so this is required to switch context.
     private var lastBrowserSiteKey: String?
+
+    /// Last app the user activated that was not Handy (updated on `NSWorkspace.didActivateApplication`).
+    /// Used when the floating accessory is clicked: activation may switch to Handy before we resolve tool context.
+    private var lastNonHandyFrontmostInfo: (appName: String, windowTitle: String, bundleID: String?)?
+
+    /// One-shot tool context captured immediately before opening chat from the floating widget (mouseDown).
+    /// Consumed by `resolveToolNameWithAutoSwitch()` so behavior matches Shift+Space+O (external app still “logical” focus).
+    private var accessoryChatOpenSnapshot: (appName: String, windowTitle: String, bundleID: String?, recorded: Date)?
+
+    private var workspaceActivationObserver: NSObjectProtocol?
 
     private func loadHistoryForTool(_ toolName: String) {
         let history = historyManager.loadHistory(for: toolName)
@@ -379,7 +452,7 @@ final class HandyManager: NSObject, ObservableObject {
     ///
     /// Returns the tool name to use for this message.
     private func resolveToolNameWithAutoSwitch() -> String {
-        let (appName, windowTitle, bundleID) = ScreenCaptureService.focusedAppInfo()
+        let (appName, windowTitle, bundleID) = resolvedFocusedAppInfoForToolSwitch()
         print("🔍 resolveToolNameWithAutoSwitch — app: \"\(appName)\", window: \"\(windowTitle)\", bundle: \(bundleID ?? "nil"), lastBundle: \(lastDetectedBundleID ?? "nil"), current: \"\(currentToolName)\"")
 
         let ownBundleID = Bundle.main.bundleIdentifier
@@ -456,6 +529,19 @@ final class HandyManager: NSObject, ObservableObject {
         }
 
         return currentToolName
+    }
+
+    /// Uses a one-shot snapshot from the floating accessory (if present and fresh), else live `focusedAppInfo()`.
+    private func resolvedFocusedAppInfoForToolSwitch() -> (appName: String, windowTitle: String, bundleID: String?) {
+        if let snap = accessoryChatOpenSnapshot {
+            let age = Date().timeIntervalSince(snap.recorded)
+            accessoryChatOpenSnapshot = nil
+            if age < 1.5 {
+                print("🔍 resolveToolName — using accessory snapshot (age \(String(format: "%.2f", age))s)")
+                return (snap.appName, snap.windowTitle, snap.bundleID)
+            }
+        }
+        return ScreenCaptureService.focusedAppInfo()
     }
 
     /// Identity key for the active browser tab/page (hostname preferred).
