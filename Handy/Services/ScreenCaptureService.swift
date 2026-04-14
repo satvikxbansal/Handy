@@ -251,6 +251,38 @@ enum ScreenCaptureService {
         return (appName, windowTitle, bundleID)
     }
 
+    /// Last browser the user activated. While Handy’s chat panel is key, `frontmostApplication` is Handy,
+    /// so we read the address bar from this process instead.
+    private static var lastActiveBrowserPID: pid_t?
+    private static var lastActiveBrowserBundleID: String?
+
+    /// Call once at launch — keeps `lastActiveBrowserPID` in sync with user navigation.
+    static func startTrackingActiveBrowser() {
+        NotificationCenter.default.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            guard let app = NSWorkspace.shared.frontmostApplication else { return }
+            let bid = app.bundleIdentifier
+            if isBrowserBundleID(bid) {
+                lastActiveBrowserPID = app.processIdentifier
+                lastActiveBrowserBundleID = bid
+            } else if bid != Bundle.main.bundleIdentifier {
+                lastActiveBrowserPID = nil
+                lastActiveBrowserBundleID = nil
+            }
+        }
+        if let front = NSWorkspace.shared.frontmostApplication,
+           isBrowserBundleID(front.bundleIdentifier) {
+            lastActiveBrowserPID = front.processIdentifier
+            lastActiveBrowserBundleID = front.bundleIdentifier
+        }
+    }
+
+    /// Bundle ID of the last active browser (for syncing `lastDetectedBundleID` while chat is focused).
+    static func cachedLastActiveBrowserBundleID() -> String? { lastActiveBrowserBundleID }
+
     /// Whether the given bundle ID belongs to a web browser.
     static func isBrowserBundleID(_ bundleID: String?) -> Bool {
         guard let bid = bundleID?.lowercased() else { return false }
@@ -264,49 +296,73 @@ enum ScreenCaptureService {
     }
 
     /// Attempts to read the current URL from a browser's address bar via the Accessibility tree.
-    /// Works for Chrome, Safari, Arc, and most Chromium-based browsers.
-    /// Returns nil if AX access fails or the browser isn't supported.
+    /// When Handy is frontmost (e.g. chat panel focused), uses the last active browser process.
     static func browserURL() -> String? {
-        guard let frontmost = NSWorkspace.shared.frontmostApplication,
-              isBrowserBundleID(frontmost.bundleIdentifier) else { return nil }
+        let own = Bundle.main.bundleIdentifier
+        let frontmost = NSWorkspace.shared.frontmostApplication
 
-        let appRef = AXUIElementCreateApplication(frontmost.processIdentifier)
-        let bid = frontmost.bundleIdentifier ?? ""
-
-        if bid.lowercased().contains("com.apple.safari") {
-            return safariURL(appRef: appRef)
-        } else {
-            return chromiumURL(appRef: appRef)
+        if let front = frontmost, isBrowserBundleID(front.bundleIdentifier) {
+            lastActiveBrowserPID = front.processIdentifier
+            lastActiveBrowserBundleID = front.bundleIdentifier
+            return browserURL(appPID: front.processIdentifier, bundleID: front.bundleIdentifier ?? "")
         }
+
+        if frontmost?.bundleIdentifier == own,
+           let pid = lastActiveBrowserPID,
+           let running = NSRunningApplication(processIdentifier: pid),
+           isBrowserBundleID(running.bundleIdentifier) {
+            return browserURL(appPID: pid, bundleID: running.bundleIdentifier ?? "")
+        }
+
+        return nil
+    }
+
+    private static func browserURL(appPID: pid_t, bundleID: String) -> String? {
+        let appRef = AXUIElementCreateApplication(appPID)
+        let bid = bundleID.lowercased()
+        if bid.contains("com.apple.safari") {
+            return safariURL(appRef: appRef)
+        }
+        return chromiumURL(appRef: appRef)
+    }
+
+    /// When the browser isn't key, focused window may be nil — try main window, then any window.
+    private static func resolvedBrowserKeyWindow(appRef: AXUIElement) -> AXUIElement? {
+        var windowValue: AnyObject?
+        if AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &windowValue) == .success,
+           let w = windowValue {
+            return (w as AnyObject) as! AXUIElement
+        }
+        if AXUIElementCopyAttributeValue(appRef, kAXMainWindowAttribute as CFString, &windowValue) == .success,
+           let w = windowValue {
+            return (w as AnyObject) as! AXUIElement
+        }
+        var windowsValue: AnyObject?
+        if AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute as CFString, &windowsValue) == .success,
+           let arr = windowsValue as? [AXUIElement] {
+            return arr.first
+        }
+        return nil
     }
 
     /// Reads the URL from Chromium-based browsers (Chrome, Edge, Brave, Arc).
-    /// The address bar is typically an AXTextField with AXRoleDescription "address and search bar"
-    /// or similar, whose AXValue contains the URL.
     private static func chromiumURL(appRef: AXUIElement) -> String? {
-        var windowValue: AnyObject?
-        guard AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &windowValue) == .success else {
-            return nil
-        }
+        guard let window = resolvedBrowserKeyWindow(appRef: appRef) else { return nil }
 
-        if let url = findAXElement(root: windowValue as! AXUIElement, role: "AXTextField", descriptionContains: "address") {
+        if let url = findAXElement(root: window, role: "AXTextField", descriptionContains: "address") {
             return url
         }
-
-        return findAXElement(root: windowValue as! AXUIElement, role: "AXTextField", descriptionContains: "url")
+        return findAXElement(root: window, role: "AXTextField", descriptionContains: "url")
     }
 
     /// Reads the URL from Safari via its AXTextField address bar.
     private static func safariURL(appRef: AXUIElement) -> String? {
-        var windowValue: AnyObject?
-        guard AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &windowValue) == .success else {
-            return nil
-        }
+        guard let window = resolvedBrowserKeyWindow(appRef: appRef) else { return nil }
 
-        if let url = findAXElement(root: windowValue as! AXUIElement, role: "AXTextField", descriptionContains: "address") {
+        if let url = findAXElement(root: window, role: "AXTextField", descriptionContains: "address") {
             return url
         }
-        return findAXElement(root: windowValue as! AXUIElement, role: "AXComboBox", descriptionContains: nil)
+        return findAXElement(root: window, role: "AXComboBox", descriptionContains: nil)
     }
 
     /// BFS through the AX tree to find a text field matching role + description.
@@ -363,11 +419,47 @@ enum ScreenCaptureService {
         return host
     }
 
+    /// Short umbrella label for chat history + UI (path ignored). Same host family maps to one bucket
+    /// (e.g. any x.com path, twitter.com, mobile.twitter.com → `x.com`).
+    static func umbrellaSiteLabel(from urlString: String) -> String? {
+        guard let rawHost = domainFromURL(urlString)?.lowercased() else { return nil }
+        let host = rawHost.hasPrefix("www.") ? String(rawHost.dropFirst(4)) : rawHost
+
+        if host == "youtu.be" { return "youtube.com" }
+
+        // X / Twitter — one bucket
+        if host == "twitter.com" || host == "x.com" || host.hasSuffix(".twitter.com") || host.hasSuffix(".x.com") {
+            return "x.com"
+        }
+
+        // GitHub (incl. Gist, API subdomains)
+        if host == "github.com" || host.hasSuffix(".github.com") {
+            return "github.com"
+        }
+
+        // LinkedIn
+        if host == "linkedin.com" || host.hasSuffix(".linkedin.com") {
+            return "linkedin.com"
+        }
+
+        // YouTube
+        if host == "youtube.com" || host.hasSuffix(".youtube.com") {
+            return "youtube.com"
+        }
+
+        // Google — one umbrella for all *.google.com product hosts
+        if host == "google.com" || host.hasSuffix(".google.com") {
+            return "google.com"
+        }
+
+        // Default: registrable-style host (strip leading `www` already). Keeps e.g. `figma.com`, `notion.so`.
+        return host
+    }
+
     /// Stable key for segregating chat history per website within the same browser process.
-    /// Uses normalized hostname so tab changes to a different site always change the key.
+    /// Uses umbrella host so `/user/status/…` does not create a new chat.
     static func normalizedBrowserSiteKey(from urlString: String) -> String? {
-        guard let host = domainFromURL(urlString)?.lowercased() else { return nil }
-        let h = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
-        return "host:\(h)"
+        guard let label = umbrellaSiteLabel(from: urlString) else { return nil }
+        return "host:\(label)"
     }
 }

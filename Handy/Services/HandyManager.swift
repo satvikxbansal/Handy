@@ -85,7 +85,6 @@ final class HandyManager: NSObject, ObservableObject {
     @Published var pendingTranscript = ""
     private var loadingTimer: Timer?
     private var currentResponseTask: Task<Void, Never>?
-    private var toolDetectionTask: Task<Void, Never>?
     private var speechRecognitionErrorObserver: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
     private var permissionTimer: Timer?
@@ -257,7 +256,6 @@ final class HandyManager: NSObject, ObservableObject {
                 lastBrowserSiteKey = Self.makeBrowserSiteKey(appName: appName, windowTitle: windowTitle)
             } else {
                 currentToolName = appName
-                isCurrentToolEnriched = true
                 lastBrowserSiteKey = nil
             }
             print("🚀 Initial tool name: \"\(currentToolName)\" siteKey: \(lastBrowserSiteKey ?? "nil")")
@@ -266,6 +264,7 @@ final class HandyManager: NSObject, ObservableObject {
         loadCurrentToolContext()
         bindTutorMode()
         startPermissionPolling()
+        ScreenCaptureService.startTrackingActiveBrowser()
         bindCompanionCursor()
     }
 
@@ -277,8 +276,6 @@ final class HandyManager: NSObject, ObservableObject {
         stopTutorIdleDetection()
         currentResponseTask?.cancel()
         currentResponseTask = nil
-        toolDetectionTask?.cancel()
-        toolDetectionTask = nil
         permissionTimer?.invalidate()
         permissionTimer = nil
         companionCursor.hide()
@@ -336,10 +333,6 @@ final class HandyManager: NSObject, ObservableObject {
     /// Bundle ID does not change when the user switches tabs, so this is required to switch context.
     private var lastBrowserSiteKey: String?
 
-    /// Whether the current tool name came from browser enrichment (URL/LLM).
-    /// Prevents re-enriching the same browser session on every message.
-    private var isCurrentToolEnriched = false
-
     private func loadHistoryForTool(_ toolName: String) {
         let history = historyManager.loadHistory(for: toolName)
         messages = history.map { turn in
@@ -359,10 +352,8 @@ final class HandyManager: NSObject, ObservableObject {
     /// Manually set the tool name (e.g. from the tool name text field in the UI).
     func setToolName(_ name: String) {
         guard name != currentToolName else { return }
-        toolDetectionTask?.cancel()
         currentToolName = name
         toolDetectionState = .detected
-        isCurrentToolEnriched = true
 
         let frontmostBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         if frontmostBundleID != Bundle.main.bundleIdentifier {
@@ -393,7 +384,35 @@ final class HandyManager: NSObject, ObservableObject {
 
         let ownBundleID = Bundle.main.bundleIdentifier
         if bundleID == ownBundleID {
-            print("🔍   → Handy is frontmost, keeping current: \"\(currentToolName)\"")
+            // Chat panel is key — frontmost app is Handy, not Chrome. Still read the *last active*
+            // browser’s address bar (cached PID) so tab/site changes update context and history.
+            if let url = ScreenCaptureService.browserURL(),
+               let siteKey = ScreenCaptureService.normalizedBrowserSiteKey(from: url),
+               let toolFromURL = ScreenCaptureService.umbrellaSiteLabel(from: url) {
+                let browserSiteChanged = lastBrowserSiteKey != nil && siteKey != lastBrowserSiteKey
+                let needsUpdate = currentToolName.isEmpty || browserSiteChanged || toolFromURL != currentToolName
+
+                if needsUpdate {
+                    let previousTool = currentToolName
+                    currentToolName = toolFromURL
+                    lastBrowserSiteKey = siteKey
+                    if let bid = ScreenCaptureService.cachedLastActiveBrowserBundleID() {
+                        lastDetectedBundleID = bid
+                    }
+                    toolDetectionState = .detected
+
+                    if currentToolName != previousTool || browserSiteChanged {
+                        if browserSiteChanged {
+                            print("🔄 Browser site changed (Handy focused): \"\(previousTool)\" → \"\(currentToolName)\" (site: \(siteKey))")
+                        } else {
+                            print("🔄 Browser context refreshed (Handy focused): \"\(previousTool)\" → \"\(currentToolName)\"")
+                        }
+                        loadHistoryForTool(currentToolName)
+                    }
+                }
+            } else {
+                print("🔍   Handy is frontmost — no browser URL (last active browser unknown or AX failed)")
+            }
             return currentToolName.isEmpty ? appName : currentToolName
         }
 
@@ -413,7 +432,6 @@ final class HandyManager: NSObject, ObservableObject {
                 currentToolName = browserToolName
             } else {
                 currentToolName = appName
-                isCurrentToolEnriched = true
                 lastBrowserSiteKey = nil
             }
 
@@ -433,9 +451,6 @@ final class HandyManager: NSObject, ObservableObject {
                 loadHistoryForTool(currentToolName)
             }
 
-            if isBrowser && !isCurrentToolEnriched {
-                enrichBrowserToolNameAsync()
-            }
         } else {
             print("🔍   → No change (same app\(isBrowser ? ", same site \(lastBrowserSiteKey ?? "nil")" : ""))")
         }
@@ -454,31 +469,20 @@ final class HandyManager: NSObject, ObservableObject {
         return "title:\(cleaned.lowercased())"
     }
 
-    /// For browsers, resolves the best synchronous tool name available.
-    /// Priority: known URL domain → raw domain → cleaned window title → app name.
+    /// For browsers: one umbrella label per site (path ignored). Never uses window titles (avoids post titles).
     private func resolveBrowserToolName(appName: String, windowTitle: String = "") -> String {
         if let url = ScreenCaptureService.browserURL() {
             print("🌐 Browser URL read via AX: \"\(url)\"")
-            if let domain = ScreenCaptureService.domainFromURL(url) {
-                if let known = Self.knownWebsiteNames(for: domain) {
-                    print("🌐   → Known site: \"\(known)\"")
-                    isCurrentToolEnriched = true
-                    return known
-                }
-                print("🌐   → Unknown domain, using: \"\(domain)\"")
-                return domain
+            if let label = ScreenCaptureService.umbrellaSiteLabel(from: url) {
+                print("🌐   → Umbrella site label: \"\(label)\"")
+                return label
             }
         } else {
             print("🌐 Browser URL read failed (AX returned nil)")
         }
 
-        let cleaned = Self.cleanBrowserWindowTitle(windowTitle, appName: appName)
-        if !cleaned.isEmpty {
-            print("🌐   → Using cleaned window title: \"\(cleaned)\"")
-            return cleaned
-        }
-
-        print("🌐   → Falling back to app name: \"\(appName)\"")
+        // Avoid window titles — they reflect a single tab headline (e.g. X post title).
+        print("🌐   → Falling back to browser app name: \"\(appName)\"")
         return appName
     }
 
@@ -504,163 +508,9 @@ final class HandyManager: NSObject, ObservableObject {
         return trimmed.count > 50 ? String(trimmed.prefix(50)) : trimmed
     }
 
-    /// Maps common domains to friendly names so we don't need an LLM call for them.
-    private static func knownWebsiteNames(for domain: String) -> String? {
-        let d = domain.lowercased()
-        let mapping: [(keywords: [String], name: String)] = [
-            (["github.com"], "GitHub"),
-            (["gitlab.com"], "GitLab"),
-            (["stackoverflow.com"], "Stack Overflow"),
-            (["docs.google.com"], "Google Docs"),
-            (["sheets.google.com"], "Google Sheets"),
-            (["slides.google.com"], "Google Slides"),
-            (["drive.google.com"], "Google Drive"),
-            (["mail.google.com"], "Gmail"),
-            (["calendar.google.com"], "Google Calendar"),
-            (["meet.google.com"], "Google Meet"),
-            (["youtube.com", "youtu.be"], "YouTube"),
-            (["figma.com"], "Figma"),
-            (["notion.so", "notion.site"], "Notion"),
-            (["linear.app"], "Linear"),
-            (["slack.com"], "Slack"),
-            (["discord.com", "discord.gg"], "Discord"),
-            (["twitter.com", "x.com"], "X / Twitter"),
-            (["reddit.com"], "Reddit"),
-            (["vercel.com"], "Vercel"),
-            (["netlify.com", "netlify.app"], "Netlify"),
-            (["aws.amazon.com"], "AWS Console"),
-            (["console.cloud.google.com"], "Google Cloud Console"),
-            (["portal.azure.com"], "Azure Portal"),
-            (["chat.openai.com", "chatgpt.com"], "ChatGPT"),
-            (["claude.ai"], "Claude"),
-            (["jira.atlassian.com", "atlassian.net"], "Jira"),
-            (["confluence.atlassian.com"], "Confluence"),
-            (["trello.com"], "Trello"),
-            (["linkedin.com"], "LinkedIn"),
-            (["medium.com"], "Medium"),
-            (["codepen.io"], "CodePen"),
-            (["codesandbox.io"], "CodeSandbox"),
-            (["replit.com"], "Replit"),
-            (["localhost"], "Localhost"),
-            (["developer.apple.com"], "Apple Developer Docs"),
-        ]
-
-        for entry in mapping {
-            for keyword in entry.keywords {
-                if d.contains(keyword) { return entry.name }
-            }
-        }
-        return nil
-    }
-
-    // MARK: - Browser Tool Enrichment (URL + LLM fallback)
-
-    /// Called when the chat panel is opened. Triggers an auto-switch check,
-    /// and if we're in a browser, enriches the tool name.
+    /// Called when the chat panel is opened — refresh tool context (incl. browser tab / umbrella site).
     func onChatPanelOpened() {
         let _ = resolveToolNameWithAutoSwitch()
-
-        if !isCurrentToolEnriched && ScreenCaptureService.isBrowserBundleID(lastDetectedBundleID) {
-            enrichBrowserToolNameAsync()
-        }
-    }
-
-    /// Enriches the browser tool name asynchronously using LLM vision.
-    /// Passes URL and window title as context hints to ground the LLM.
-    /// Validates the result — rejects it if it looks hallucinated.
-    private func enrichBrowserToolNameAsync() {
-        toolDetectionTask?.cancel()
-
-        let preEnrichName = currentToolName
-        let (_, windowTitle, _) = ScreenCaptureService.focusedAppInfo()
-        let browserURL = ScreenCaptureService.browserURL()
-
-        var hints: [String] = []
-        if let url = browserURL { hints.append("url: \(url)") }
-        if !windowTitle.isEmpty { hints.append("window title: \(windowTitle)") }
-        let contextHints = hints.joined(separator: ", ")
-
-        print("🌐 Starting LLM enrichment for browser (current: \"\(preEnrichName)\", hints: \"\(contextHints)\")")
-        toolDetectionState = .detecting
-
-        toolDetectionTask = Task { @MainActor in
-            do {
-                let captures = try await ScreenCaptureService.captureFocusedWindow()
-                guard !Task.isCancelled, let capture = captures.first else { return }
-
-                let name = try await claudeAPI.detectToolName(
-                    imageData: capture.imageData,
-                    contextHints: contextHints
-                )
-                guard !Task.isCancelled else { return }
-
-                print("🌐 LLM returned: \"\(name)\" (pre-enrich was: \"\(preEnrichName)\")")
-
-                if Self.isPlausibleEnrichment(llmName: name, currentName: preEnrichName, url: browserURL, windowTitle: windowTitle) {
-                    let previousToolName = currentToolName
-                    currentToolName = name
-                    toolDetectionState = .detected
-                    isCurrentToolEnriched = true
-
-                    if name != previousToolName {
-                        print("🌐 Browser tool enriched: \"\(previousToolName)\" → \"\(name)\"")
-                        loadHistoryForTool(name)
-                    }
-                } else {
-                    print("🌐 LLM result rejected as implausible: \"\(name)\" — keeping \"\(currentToolName)\"")
-                    toolDetectionState = .detected
-                    isCurrentToolEnriched = true
-                }
-            } catch is CancellationError {
-                // Intentional
-            } catch {
-                guard !Task.isCancelled else { return }
-                print("🌐 LLM enrichment failed: \(error.localizedDescription) — keeping \"\(currentToolName)\"")
-                toolDetectionState = .detected
-                isCurrentToolEnriched = true
-            }
-        }
-    }
-
-    /// Validates that the LLM-returned name is a plausible enrichment rather than
-    /// a hallucination. Rejects names that have zero overlap with the available
-    /// signals (URL, window title, current tool name).
-    private static func isPlausibleEnrichment(
-        llmName: String,
-        currentName: String,
-        url: String?,
-        windowTitle: String
-    ) -> Bool {
-        let llm = llmName.lowercased()
-
-        // Reject obviously wrong patterns — native desktop apps from a browser context
-        let nativeAppNames = [
-            "microsoft access", "microsoft word", "microsoft excel", "microsoft powerpoint",
-            "keynote", "pages", "numbers", "preview", "textedit", "terminal",
-            "finder", "system preferences", "system settings"
-        ]
-        for native in nativeAppNames {
-            if llm.contains(native) { return false }
-        }
-
-        // Check if LLM name has any overlap with known signals
-        let signals = [
-            url?.lowercased() ?? "",
-            windowTitle.lowercased(),
-            currentName.lowercased()
-        ].filter { !$0.isEmpty }
-
-        // If we have no signals, accept the LLM result (nothing to validate against)
-        if signals.isEmpty { return true }
-
-        let llmWords = Set(llm.components(separatedBy: .alphanumerics.inverted).filter { $0.count > 2 })
-        for signal in signals {
-            let signalWords = Set(signal.components(separatedBy: .alphanumerics.inverted).filter { $0.count > 2 })
-            if !llmWords.isDisjoint(with: signalWords) { return true }
-        }
-
-        // No word overlap at all between LLM result and any signal — likely hallucinated
-        return false
     }
 
     // MARK: - Send Message

@@ -6,6 +6,7 @@ struct ChatInterfaceView: View {
 
     @State private var inputText = ""
     @State private var toolNameInput = ""
+    @State private var isEditingToolName = false
     @State private var showSettings = false
     @State private var scrollProxy: ScrollViewProxy?
 
@@ -116,7 +117,7 @@ struct ChatInterfaceView: View {
     }
 
     private var toolNameBar: some View {
-        HStack(spacing: DS.Spacing.sm) {
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
             Image(systemName: "app.badge")
                 .font(.system(size: 11))
                 .foregroundColor(DS.Colors.textTertiary)
@@ -130,40 +131,59 @@ struct ChatInterfaceView: View {
                         .controlSize(.mini)
                         .tint(DS.Colors.textTertiary)
                 }
-            } else {
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else if isEditingToolName {
                 TextField("Tool / App name", text: $toolNameInput)
                     .textFieldStyle(.plain)
                     .font(DS.Typography.caption)
-                    .foregroundColor(DS.Colors.textSecondary)
-                    .onSubmit {
-                        if !toolNameInput.isEmpty {
-                            manager.setToolName(toolNameInput)
-                        }
-                    }
-                    .onChange(of: manager.currentToolName) { _, newValue in
-                        if !newValue.isEmpty {
-                            toolNameInput = newValue
-                        }
-                    }
-            }
+                    .foregroundColor(DS.Colors.textPrimary)
+                    .onSubmit { commitToolNameEdit() }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
-
-            if manager.toolDetectionState == .failed {
-                yellowDotTrail
-            }
-
-            if !manager.currentToolName.isEmpty && manager.toolDetectionState != .detecting {
-                Text(manager.currentToolName)
+                Button("Done") {
+                    commitToolNameEdit()
+                }
+                .font(DS.Typography.caption)
+                .foregroundColor(DS.Colors.textTertiary)
+                .buttonStyle(.plain)
+            } else {
+                Text(manager.currentToolName.isEmpty ? "—" : manager.currentToolName)
                     .font(DS.Typography.caption)
                     .foregroundColor(DS.Colors.accent)
                     .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if manager.toolDetectionState == .failed {
+                    yellowDotTrail
+                }
+
+                Button("Change") {
+                    toolNameInput = manager.currentToolName
+                    isEditingToolName = true
+                }
+                .font(DS.Typography.caption)
+                .foregroundColor(DS.Colors.textTertiary)
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
         .background(DS.Colors.surface)
         .animation(.easeInOut(duration: 0.2), value: manager.toolDetectionState)
+        .animation(.easeInOut(duration: 0.15), value: isEditingToolName)
+        .onChange(of: manager.currentToolName) { _, newValue in
+            guard !isEditingToolName, !newValue.isEmpty else { return }
+            toolNameInput = newValue
+        }
+    }
+
+    private func commitToolNameEdit() {
+        let trimmed = toolNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            manager.setToolName(trimmed)
+        }
+        isEditingToolName = false
     }
 
     private var yellowDotTrail: some View {
@@ -328,12 +348,11 @@ struct ChatInterfaceView: View {
     }
 
     private func sendCurrentInput() {
+        if isEditingToolName {
+            commitToolNameEdit()
+        }
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-
-        if !toolNameInput.isEmpty {
-            manager.setToolName(toolNameInput)
-        }
 
         manager.sendMessage(text)
         inputText = ""
