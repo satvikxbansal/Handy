@@ -2,6 +2,8 @@
 
 Handy is a native macOS assistant that lives in your menu bar. It looks at your screen, listens when you want it to, and talks back—so you can ask “what do I click?” or “what does this mean?” without pasting screenshots into a separate chat window.
 
+You can open chat with a keyboard shortcut, the menu bar, or an **optional tiny floating widget** on the edge of the screen. The widget is there if you want a quick tap target without remembering shortcuts.
+
 The deeper idea is **context that matches how you actually work**. Most assistants forget that you were just in Xcode and are now in Slack, or that “Chrome” is not the app you care about—the **website** is. Handy tracks the **focused app and site**, keeps **separate conversation memory per place**, and only sends the **recent, relevant thread** to the model along with a fresh view of your displays. Your secrets stay **on your Mac** in the system Keychain; your chat history stays **local files** on disk—not in someone else’s cloud by default.
 
 ---
@@ -15,6 +17,12 @@ When you move from one app to another, you are not having one continuous chat wi
 This happens automatically before messages are sent (and when you open the chat panel): the app compares the **current frontmost app** to what it saw last. If you changed apps—or Handy did not yet know a name—it **updates the active tool** and **loads the saved conversation** for that tool. If Handy itself is frontmost (for example you pulled the chat forward), it **does not throw away** your current context just because the menu bar app is active.
 
 Plain English: **one brain, many notebooks**—and it flips to the right notebook when you change what you are working in.
+
+### Floating widget (optional quick access)
+
+If you turn it on in **Settings → Trigger**, a **small pill** stays on screen while chat is **closed**. **Tap** it to open the same chat you would get with **Shift+Space+O**—same tool context and history, not a blank thread. **Click and drag** anywhere on the pill to move it; the blue companion cursor hides while you drag so it does not sit on top of the widget. The widget **hides while chat is open** and comes back when you close chat.
+
+It is optional on purpose: some people only want the menu bar and shortcuts. Others like a visible “open Handy” button that does not get in the way.
 
 ### Website recognition (browsers are not “the tool”)
 
@@ -44,6 +52,7 @@ Provider keys (Claude for the main model, and optional keys for speech or voice 
 - **Visual pointing** — Responses can include `[POINT:x,y:label]` so an overlay can **animate toward** a control or region.
 - **Voice** — Push-to-talk; default Apple speech (on-device when available); optional OpenAI or AssemblyAI for transcription; system or ElevenLabs for speech output.
 - **Floating chat** — Dark, draggable panel with streaming replies and scrollable history.
+- **Floating widget** (optional) — Tiny on-screen pill to open chat with one tap; draggable; toggle in Settings → Trigger.
 - **Tutor mode** — Optional mode that watches when you are idle and can nudge you through an app (uses API tokens).
 - **Multi-monitor** — Screenshots all displays and maps coordinates sensibly.
 
@@ -55,6 +64,8 @@ Provider keys (Claude for the main model, and optional keys for speech or voice 
 |----------|--------|
 | `Shift + Space + O` | Open chat |
 | `Control + Z` | Start/stop voice input |
+
+You can also open chat from the **menu bar** hand menu or the **floating widget** (if enabled in Settings → Trigger).
 
 Custom hotkeys are planned for a future version.
 
@@ -113,7 +124,7 @@ open "$HOME/Library/Developer/Xcode/DerivedData"/Handy-*/Build/Products/Debug/Ha
 3. Grant prompts for **Accessibility** (hotkeys and, for browsers, URL reading), **Screen Recording**, **Microphone**, and **Speech Recognition** as needed.  
 4. From the menu bar hand icon, open **Settings**.  
 5. Under **Brain**, add your **Claude** key (stored in Keychain).  
-6. Use **Shift+Space+O** for chat or **Control+Z** for voice.
+6. Use **Shift+Space+O** for chat or **Control+Z** for voice. Optional: **Settings → Trigger** → turn on **Floating access widget** for a small on-screen button to open chat.
 
 ### API keys (all local)
 
@@ -154,6 +165,10 @@ Handy/
 │   ├── ChatPanelManager.swift
 │   ├── ChatInterfaceView.swift
 │   └── SettingsView.swift
+├── FloatingAccessWidget/
+│   ├── FloatingAccessWidgetController.swift   # Small optional panel
+│   ├── FloatingAccessWidgetView.swift           # SwiftUI chrome
+│   └── FloatingAccessoryInteractionView.swift   # Drag vs tap, hover
 └── Utilities/
     ├── KeychainManager.swift
     └── PointParser.swift
