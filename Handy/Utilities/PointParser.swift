@@ -52,6 +52,37 @@ enum PointParser {
         ).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Extracts the [SPOKEN]...[/SPOKEN] portion from a voice response.
+    /// Returns (spokenText, fullDisplayText) where:
+    ///   - spokenText: the content inside SPOKEN tags (for TTS)
+    ///   - fullDisplayText: the entire response with SPOKEN tags removed (for chat UI)
+    /// If no SPOKEN tags are found, returns the full text as both spoken and display.
+    static func extractSpokenPart(from text: String) -> (spoken: String, display: String) {
+        let pattern = #"\[SPOKEN\](.*?)\[/SPOKEN\]"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let spokenRange = Range(match.range(at: 1), in: text) else {
+            return (spoken: text, display: text)
+        }
+
+        let spokenText = String(text[spokenRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let display = regex.stringByReplacingMatches(
+            in: text,
+            range: NSRange(text.startIndex..., in: text),
+            withTemplate: ""
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let cleanDisplay: String
+        if display.isEmpty {
+            cleanDisplay = spokenText
+        } else {
+            cleanDisplay = spokenText + "\n\n" + display
+        }
+
+        return (spoken: spokenText, display: cleanDisplay)
+    }
+
     /// Maps POINT coordinates from screenshot pixel space to AppKit global screen coordinates.
     static func mapToScreenCoordinates(
         point: CGPoint,

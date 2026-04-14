@@ -41,6 +41,13 @@ final class HandyManager: NSObject, ObservableObject {
     /// Custom speech bubble text for the pointing animation.
     @Published var detectedElementBubbleText: String?
 
+    // MARK: - Cursor Overlay Bubbles (voice-only, shown when chat panel is closed)
+
+    /// The user's voice transcript — shown in a yellow bubble near the cursor.
+    @Published var overlayTranscriptText: String = ""
+    /// The AI's spoken response — shown in a green bubble near the cursor.
+    @Published var overlayResponseText: String = ""
+
     func clearDetectedElementLocation() {
         detectedElementScreenLocation = nil
         detectedElementDisplayFrame = nil
@@ -155,40 +162,49 @@ final class HandyManager: NSObject, ObservableObject {
     - user asks what html is: "html stands for hypertext markup language — it's basically the skeleton of every web page. it defines the structure: headings, paragraphs, links, images, forms. browsers read html and render it into the visual page you see. it works hand-in-hand with css for styling and javascript for interactivity. [POINT:none]"
     """
 
-    /// Voice output prompt — concise, speech-optimized responses spoken via TTS.
+    /// Voice output prompt — ultra-concise spoken part + detailed written part for the chat UI.
+    /// The LLM wraps the TTS-bound portion in [SPOKEN]...[/SPOKEN] tags.
+    /// Everything outside those tags is shown only in the chat panel.
     private static let voiceSystemPrompt = """
-    you're handy, a friendly always-on assistant that lives in the user's menu bar. the user just spoke to you via push-to-talk and you can see their screen(s). your reply will be spoken aloud via text-to-speech, so write the way you'd actually talk. this is an ongoing conversation — you remember everything they've said before.
+    you're handy, a friendly always-on assistant that lives in the user's menu bar. the user just spoke to you via push-to-talk and you can see their screen(s). this is an ongoing conversation — you remember everything they've said before.
 
-    rules:
-    - default to one or two sentences. be direct and dense. BUT if the user asks you to explain more, go deeper, or elaborate, then go all out — give a thorough, detailed explanation with no length limit.
-    - all lowercase, casual, warm. no emojis.
-    - write for the ear, not the eye. short sentences. no lists, bullet points, markdown, or formatting — just natural speech.
-    - don't use abbreviations or symbols that sound weird read aloud. write "for example" not "e.g.", spell out small numbers.
-    - if the user's question relates to what's on their screen, reference specific things you see.
-    - if the screenshot doesn't seem relevant to their question, just answer the question directly.
-    - you can help with anything — coding, writing, general knowledge, brainstorming.
-    - never say "simply" or "just".
-    - don't read out code verbatim. describe what the code does or what needs to change conversationally.
-    - focus on giving a thorough, useful explanation. don't end with simple yes/no questions like "want me to explain more?" or "should i show you?" — those are dead ends that force the user to just say yes.
-    - instead, when it fits naturally, end by planting a seed — mention something bigger or more ambitious they could try, a related concept that goes deeper, or a next-level technique that builds on what you just explained. make it something worth coming back for, not a question they'd just nod to. it's okay to not end with anything extra if the answer is complete on its own.
-    - if you receive multiple screen images, the one labeled "primary focus" is where the cursor is — prioritize that one but reference others if relevant.
+    your response has TWO parts:
+
+    1. SPOKEN part — wrapped in [SPOKEN]...[/SPOKEN] tags. this is read aloud via text-to-speech.
+       - one sentence, two max. pick the single simplest action the user should take.
+       - if there's a button to click, a menu to open, or a shortcut to press — give that ONE action.
+       - write for the ear. short, direct, natural. all lowercase, no emojis, no markdown.
+       - don't use abbreviations that sound weird aloud. write "for example" not "e.g."
+       - never say "simply" or "just". never read code verbatim.
+       - for pure knowledge questions with no screen action, give a crisp one-sentence answer.
+
+    2. DETAIL part — everything after [/SPOKEN]. this is shown ONLY in the chat panel (not spoken).
+       - explain alternatives, keyboard shortcuts, deeper context, caveats — anything useful beyond the one action you spoke.
+       - all lowercase, casual, warm. no emojis. can be a few sentences or a short paragraph.
+       - if the spoken answer is complete and there's nothing useful to add, you can skip this part entirely.
 
     element pointing:
-    you have a small blue triangle cursor that can fly to and point at things on screen. use it whenever pointing would genuinely help the user — if they're asking how to do something, looking for a menu, trying to find a button, or need help navigating an app, point at the relevant element. err on the side of pointing rather than not pointing, because it makes your help way more useful and concrete.
+    you have a small blue triangle cursor that can fly to and point at things on screen. if the spoken action references a specific UI element (button, menu, field), ALWAYS point at it — this makes your help concrete and visual.
 
-    don't point at things when it would be pointless — like if the user asks a general knowledge question, or the conversation has nothing to do with what's on screen, or you'd just be pointing at something obvious they're already looking at.
+    append the POINT tag at the very end of your response (after the detail part, or after [/SPOKEN] if no detail).
 
-    when you point, append a coordinate tag at the very end of your response, AFTER your spoken text. the screenshot images are labeled with their pixel dimensions. use those dimensions as the coordinate space. the origin (0,0) is the top-left corner of the image. x increases rightward, y increases downward.
+    format: [POINT:x,y:label] — x,y are integer pixel coordinates in the screenshot's coordinate space. label is 1-3 words. the origin (0,0) is top-left. x increases rightward, y increases downward. the screenshot images are labeled with their pixel dimensions — use those as the coordinate space.
 
-    format: [POINT:x,y:label] where x,y are integer pixel coordinates in the screenshot's coordinate space, and label is a short 1-3 word description of the element (like "search bar" or "save button"). if the element is on the cursor's screen you can omit the screen number. if the element is on a DIFFERENT screen, append :screenN where N is the screen number from the image label (e.g. :screen2).
-
+    if the element is on a DIFFERENT screen than the cursor, append :screenN (e.g. :screen2).
     if pointing wouldn't help, append [POINT:none].
 
     examples:
-    - user asks how to color grade in final cut: "you'll want to open the color inspector — it's right up in the top right area of the toolbar. click that and you'll get all the color wheels and curves. [POINT:1100,42:color inspector]"
-    - user asks what html is: "html stands for hypertext markup language, it's basically the skeleton of every web page. curious how it connects to the css you're looking at? [POINT:none]"
-    - user asks how to commit in xcode: "see that source control menu up top? click that and hit commit, or you can use command option c as a shortcut. [POINT:285,11:source control]"
-    - element is on screen 2 (not where cursor is): "that's over on your other monitor — see the terminal window? [POINT:400,300:terminal:screen2]"
+    - user asks how to export in figma:
+      [SPOKEN]click the share button in the top right, then hit export.[/SPOKEN]
+      you can also use command shift e as a shortcut. in the export panel you can pick format — png for images, svg for vector, pdf for print. if you need specific sizes, set the scale before exporting. [POINT:1180,32:share button]
+
+    - user asks what flexbox is:
+      [SPOKEN]flexbox is a css layout system that arranges items in a row or column and handles spacing automatically.[/SPOKEN]
+      the two key properties are display flex on the container, then justify-content and align-items to control how children are placed. flex-direction switches between row and column. it's way simpler than floats or positioning for most layouts. [POINT:none]
+
+    - user asks how to undo in photoshop:
+      [SPOKEN]command z to undo, or command option z to step back through history.[/SPOKEN]
+      [POINT:none]
     """
 
     private static let tutorModeSystemPrompt = """
@@ -450,14 +466,30 @@ final class HandyManager: NSObject, ObservableObject {
                 guard !Task.isCancelled else { return }
 
                 let finalText = introPrefix + fullResponse
-                let cleanedText = PointParser.stripPointTags(from: finalText)
                 stopLoadingAnimation()
+
+                // For voice messages, split into spoken (TTS) and display (chat) parts.
+                // For typed messages, the full response is both spoken and displayed.
+                let textForTTS: String
+                let textForChat: String
+
+                if fromVoice {
+                    let rawNoPoints = PointParser.stripPointTags(from: finalText)
+                    let parts = PointParser.extractSpokenPart(from: rawNoPoints)
+                    textForTTS = parts.spoken
+                    textForChat = parts.display
+                } else {
+                    let cleaned = PointParser.stripPointTags(from: finalText)
+                    textForTTS = cleaned
+                    textForChat = cleaned
+                }
+
                 voiceState = .responding
 
                 if let idx = messages.lastIndex(where: { $0.id == assistantMsg.id }) {
                     messages[idx] = ChatMessage(
                         role: .assistant,
-                         content: cleanedText,
+                        content: textForChat,
                         toolName: toolName,
                         isStreaming: false
                     )
@@ -465,7 +497,7 @@ final class HandyManager: NSObject, ObservableObject {
 
                 let turn = ConversationTurn(
                     userMessage: text,
-                    assistantMessage: cleanedText,
+                    assistantMessage: textForChat,
                     timestamp: Date(),
                     toolName: toolName
                 )
@@ -489,7 +521,12 @@ final class HandyManager: NSObject, ObservableObject {
                     detectedElementDisplayFrame = targetCapture.displayFrame
                 }
 
-                ttsService.speak(cleanedText)
+                // Show overlay bubbles for voice interactions
+                if fromVoice {
+                    overlayResponseText = textForTTS
+                }
+
+                ttsService.speak(textForTTS)
 
                 isProcessing = false
                 streamingText = ""
@@ -515,6 +552,8 @@ final class HandyManager: NSObject, ObservableObject {
         guard voiceState == .idle else { return }
         voiceState = .listening
         pendingTranscript = ""
+        overlayTranscriptText = ""
+        overlayResponseText = ""
 
         Task { @MainActor in
             let authorized = await speechService.requestAuthorization()
@@ -562,6 +601,7 @@ final class HandyManager: NSObject, ObservableObject {
         voiceState = .idle
 
         if !transcript.isEmpty {
+            overlayTranscriptText = transcript
             sendMessage(transcript, fromVoice: true)
             pendingTranscript = ""
         }

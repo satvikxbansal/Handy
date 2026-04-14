@@ -29,6 +29,9 @@ enum DS {
 
         static let cursorBlue = Color(hex: "3B82F6")
         static let overlayCursorBlue = Color(hex: "3380FF")
+
+        static let overlayTranscriptBubble = Color(hex: "CA8A04")
+        static let overlayResponseBubble = Color(hex: "16A34A")
     }
 
     // MARK: - Typography (SF Pro - system default)

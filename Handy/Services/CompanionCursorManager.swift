@@ -98,6 +98,20 @@ private struct NavigationBubbleSizePreferenceKey: PreferenceKey {
     }
 }
 
+private struct TranscriptBubbleSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+private struct ResponseBubbleSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
 // MARK: - Companion Cursor View
 
 struct CompanionCursorView: View {
@@ -121,6 +135,17 @@ struct CompanionCursorView: View {
     @State private var cursorPositionWhenNavigationStarted: CGPoint = .zero
     @State private var navigationAnimationTimer: Timer?
     @State private var isReturningToCursor: Bool = false
+
+    // MARK: - Voice Overlay Bubbles State
+
+    @State private var transcriptBubbleOpacity: Double = 0.0
+    @State private var transcriptBubbleSize: CGSize = .zero
+    @State private var responseBubbleOpacity: Double = 0.0
+    @State private var responseBubbleSize: CGSize = .zero
+    @State private var responseBubbleStreamedText: String = ""
+    @State private var responseBubbleHideTask: DispatchWorkItem?
+    @State private var lastShownTranscript: String = ""
+    @State private var lastShownResponse: String = ""
 
     private let navigationPointerPhrases = [
         "right here!",
@@ -177,6 +202,58 @@ struct CompanionCursorView: View {
                     .onPreferenceChange(NavigationBubbleSizePreferenceKey.self) { newSize in
                         navigationBubbleSize = newSize
                     }
+            }
+
+            // Yellow transcript bubble — shows what the user said via voice
+            if isCursorOnThisScreen && !lastShownTranscript.isEmpty {
+                Text(lastShownTranscript)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(DS.Colors.overlayTranscriptBubble)
+                            .shadow(color: DS.Colors.overlayTranscriptBubble.opacity(0.4), radius: 6, x: 0, y: 0)
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 260, alignment: .leading)
+                    .overlay(
+                        GeometryReader { geo in
+                            Color.clear.preference(key: TranscriptBubbleSizePreferenceKey.self, value: geo.size)
+                        }
+                    )
+                    .opacity(transcriptBubbleOpacity)
+                    .position(x: cursorPosition.x + 10 + (transcriptBubbleSize.width / 2), y: cursorPosition.y - 12 - (transcriptBubbleSize.height / 2))
+                    .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
+                    .animation(.easeOut(duration: 0.3), value: transcriptBubbleOpacity)
+                    .onPreferenceChange(TranscriptBubbleSizePreferenceKey.self) { transcriptBubbleSize = $0 }
+            }
+
+            // Green response bubble — shows AI's spoken answer
+            if isCursorOnThisScreen && !responseBubbleStreamedText.isEmpty {
+                Text(responseBubbleStreamedText)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(DS.Colors.overlayResponseBubble)
+                            .shadow(color: DS.Colors.overlayResponseBubble.opacity(0.4), radius: 6, x: 0, y: 0)
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 280, alignment: .leading)
+                    .overlay(
+                        GeometryReader { geo in
+                            Color.clear.preference(key: ResponseBubbleSizePreferenceKey.self, value: geo.size)
+                        }
+                    )
+                    .opacity(responseBubbleOpacity)
+                    .position(x: cursorPosition.x + 10 + (responseBubbleSize.width / 2), y: cursorPosition.y + 20 + (responseBubbleSize.height / 2))
+                    .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
+                    .animation(.easeOut(duration: 0.3), value: responseBubbleOpacity)
+                    .onPreferenceChange(ResponseBubbleSizePreferenceKey.self) { responseBubbleSize = $0 }
             }
 
             // Blue triangle — visible during idle and responding (TTS playing)
@@ -240,6 +317,34 @@ struct CompanionCursorView: View {
                 return
             }
             startNavigatingToElement(screenLocation: screenLocation)
+        }
+        .onChange(of: manager.overlayTranscriptText) { newText in
+            guard !newText.isEmpty else { return }
+            lastShownTranscript = newText
+            responseBubbleStreamedText = ""
+            responseBubbleOpacity = 0.0
+            lastShownResponse = ""
+            responseBubbleHideTask?.cancel()
+            withAnimation { transcriptBubbleOpacity = 1.0 }
+        }
+        .onChange(of: manager.overlayResponseText) { newText in
+            guard !newText.isEmpty else { return }
+            lastShownResponse = newText
+            withAnimation { transcriptBubbleOpacity = 0.0 }
+            streamResponseBubbleText(newText)
+        }
+        .onChange(of: manager.voiceState) { newState in
+            if newState == .listening {
+                responseBubbleHideTask?.cancel()
+                responseBubbleHideTask = nil
+                withAnimation {
+                    transcriptBubbleOpacity = 0.0
+                    responseBubbleOpacity = 0.0
+                }
+                lastShownTranscript = ""
+                responseBubbleStreamedText = ""
+                lastShownResponse = ""
+            }
         }
     }
 
@@ -460,6 +565,46 @@ struct CompanionCursorView: View {
         navigationBubbleOpacity = 0.0
         navigationBubbleScale = 1.0
         manager.clearDetectedElementLocation()
+    }
+
+    // MARK: - Voice Overlay Bubble Helpers
+
+    private func streamResponseBubbleText(_ text: String) {
+        responseBubbleStreamedText = ""
+        responseBubbleOpacity = 1.0
+        responseBubbleHideTask?.cancel()
+
+        var currentIndex = 0
+        func streamNext() {
+            guard currentIndex < text.count else {
+                scheduleResponseBubbleHide()
+                return
+            }
+            let charIndex = text.index(text.startIndex, offsetBy: currentIndex)
+            responseBubbleStreamedText.append(text[charIndex])
+            currentIndex += 1
+            let delay = Double.random(in: 0.02...0.04)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                streamNext()
+            }
+        }
+        streamNext()
+    }
+
+    private func scheduleResponseBubbleHide() {
+        responseBubbleHideTask?.cancel()
+        let work = DispatchWorkItem { [self] in
+            withAnimation(.easeOut(duration: 0.5)) {
+                self.responseBubbleOpacity = 0.0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                self.responseBubbleStreamedText = ""
+                self.lastShownResponse = ""
+                self.lastShownTranscript = ""
+            }
+        }
+        responseBubbleHideTask = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6.0, execute: work)
     }
 }
 
