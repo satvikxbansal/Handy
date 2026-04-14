@@ -141,7 +141,7 @@ struct ChatInterfaceView: View {
                         }
                     }
                     .onChange(of: manager.currentToolName) { _, newValue in
-                        if toolNameInput.isEmpty && !newValue.isEmpty {
+                        if !newValue.isEmpty {
                             toolNameInput = newValue
                         }
                     }

@@ -246,6 +246,19 @@ final class HandyManager: NSObject, ObservableObject {
         if !hasAccessibilityPermission {
             requestAccessibilityPermission()
         }
+
+        let (appName, _, bundleID) = ScreenCaptureService.focusedAppInfo()
+        lastDetectedBundleID = bundleID
+
+        if currentToolName.isEmpty && !appName.isEmpty && appName != "Unknown" {
+            if ScreenCaptureService.isBrowserBundleID(bundleID) {
+                currentToolName = resolveBrowserToolName(appName: appName)
+            } else {
+                currentToolName = appName
+                isCurrentToolEnriched = true
+            }
+        }
+
         loadCurrentToolContext()
         bindTutorMode()
         startPermissionPolling()
@@ -310,9 +323,16 @@ final class HandyManager: NSObject, ObservableObject {
 
     // MARK: - Tool Context
 
-    private func loadCurrentToolContext() {
-        let (appName, _, _) = ScreenCaptureService.focusedAppInfo()
-        let toolName = currentToolName.isEmpty ? appName : currentToolName
+    /// The bundle ID of the app that was active when currentToolName was set.
+    /// Used to detect when the user switches to a different application.
+    /// Never stores Handy's own bundle ID — always tracks the real "target" app.
+    private var lastDetectedBundleID: String?
+
+    /// Whether the current tool name came from browser enrichment (URL/LLM).
+    /// Prevents re-enriching the same browser session on every message.
+    private var isCurrentToolEnriched = false
+
+    private func loadHistoryForTool(_ toolName: String) {
         let history = historyManager.loadHistory(for: toolName)
         messages = history.map { turn in
             [
@@ -322,34 +342,154 @@ final class HandyManager: NSObject, ObservableObject {
         }.flatMap { $0 }
     }
 
+    private func loadCurrentToolContext() {
+        let (appName, _, _) = ScreenCaptureService.focusedAppInfo()
+        let toolName = currentToolName.isEmpty ? appName : currentToolName
+        loadHistoryForTool(toolName)
+    }
+
+    /// Manually set the tool name (e.g. from the tool name text field in the UI).
     func setToolName(_ name: String) {
         guard name != currentToolName else { return }
         toolDetectionTask?.cancel()
         currentToolName = name
         toolDetectionState = .detected
-        loadCurrentToolContext()
+        isCurrentToolEnriched = true
+
+        let frontmostBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        if frontmostBundleID != Bundle.main.bundleIdentifier {
+            lastDetectedBundleID = frontmostBundleID
+        }
+
+        loadHistoryForTool(name)
     }
 
-    func resolveToolName() -> String {
-        if !currentToolName.isEmpty { return currentToolName }
-        let (appName, windowTitle, bundleID) = ScreenCaptureService.focusedAppInfo()
-        let isBrowser = bundleID?.contains("com.google.Chrome") == true ||
-                        bundleID?.contains("com.apple.Safari") == true ||
-                        bundleID?.contains("org.mozilla.firefox") == true
-        if isBrowser && !windowTitle.isEmpty {
-            return windowTitle
+    /// Checks the currently focused application and switches tool context if the
+    /// user has moved to a different app since the last message. This is the core
+    /// of smart tool detection — called before every message is sent.
+    ///
+    /// For native apps: uses the app name directly (instant).
+    /// For browsers: reads the URL via Accessibility to get the domain, then
+    /// kicks off async LLM enrichment for a better name.
+    ///
+    /// Returns the tool name to use for this message.
+    private func resolveToolNameWithAutoSwitch() -> String {
+        let (appName, _, bundleID) = ScreenCaptureService.focusedAppInfo()
+
+        let ownBundleID = Bundle.main.bundleIdentifier
+        if bundleID == ownBundleID {
+            return currentToolName.isEmpty ? appName : currentToolName
+        }
+
+        let isBrowser = ScreenCaptureService.isBrowserBundleID(bundleID)
+        let appChanged = bundleID != nil && bundleID != lastDetectedBundleID && lastDetectedBundleID != nil
+
+        if appChanged || currentToolName.isEmpty {
+            let previousTool = currentToolName
+
+            if isBrowser {
+                let browserToolName = resolveBrowserToolName(appName: appName)
+                currentToolName = browserToolName
+                isCurrentToolEnriched = false
+            } else {
+                currentToolName = appName
+                isCurrentToolEnriched = true
+            }
+
+            lastDetectedBundleID = bundleID
+            toolDetectionState = .detected
+
+            if currentToolName != previousTool {
+                print("🔄 Tool context switched: \"\(previousTool)\" → \"\(currentToolName)\" (bundle: \(bundleID ?? "nil"))")
+                loadHistoryForTool(currentToolName)
+            }
+
+            if isBrowser && !isCurrentToolEnriched {
+                enrichBrowserToolNameAsync()
+            }
+        }
+
+        return currentToolName
+    }
+
+    /// For browsers, resolves the best synchronous tool name available.
+    /// Priority: URL domain → window title (cleaned) → app name.
+    private func resolveBrowserToolName(appName: String) -> String {
+        if let url = ScreenCaptureService.browserURL(),
+           let domain = ScreenCaptureService.domainFromURL(url) {
+            let knownSites = Self.knownWebsiteNames(for: domain)
+            if let known = knownSites {
+                return known
+            }
+            return domain
         }
         return appName
     }
 
-    // MARK: - Tool Auto-Detection (LLM-based)
+    /// Maps common domains to friendly names so we don't need an LLM call for them.
+    private static func knownWebsiteNames(for domain: String) -> String? {
+        let d = domain.lowercased()
+        let mapping: [(keywords: [String], name: String)] = [
+            (["github.com"], "GitHub"),
+            (["gitlab.com"], "GitLab"),
+            (["stackoverflow.com"], "Stack Overflow"),
+            (["docs.google.com"], "Google Docs"),
+            (["sheets.google.com"], "Google Sheets"),
+            (["slides.google.com"], "Google Slides"),
+            (["drive.google.com"], "Google Drive"),
+            (["mail.google.com"], "Gmail"),
+            (["calendar.google.com"], "Google Calendar"),
+            (["meet.google.com"], "Google Meet"),
+            (["youtube.com", "youtu.be"], "YouTube"),
+            (["figma.com"], "Figma"),
+            (["notion.so", "notion.site"], "Notion"),
+            (["linear.app"], "Linear"),
+            (["slack.com"], "Slack"),
+            (["discord.com", "discord.gg"], "Discord"),
+            (["twitter.com", "x.com"], "X / Twitter"),
+            (["reddit.com"], "Reddit"),
+            (["vercel.com"], "Vercel"),
+            (["netlify.com", "netlify.app"], "Netlify"),
+            (["aws.amazon.com"], "AWS Console"),
+            (["console.cloud.google.com"], "Google Cloud Console"),
+            (["portal.azure.com"], "Azure Portal"),
+            (["chat.openai.com", "chatgpt.com"], "ChatGPT"),
+            (["claude.ai"], "Claude"),
+            (["jira.atlassian.com", "atlassian.net"], "Jira"),
+            (["confluence.atlassian.com"], "Confluence"),
+            (["trello.com"], "Trello"),
+            (["medium.com"], "Medium"),
+            (["codepen.io"], "CodePen"),
+            (["codesandbox.io"], "CodeSandbox"),
+            (["replit.com"], "Replit"),
+            (["localhost"], "Localhost"),
+            (["developer.apple.com"], "Apple Developer Docs"),
+        ]
 
-    func onChatPanelOpened() {
-        guard currentToolName.isEmpty else { return }
-        detectToolName()
+        for entry in mapping {
+            for keyword in entry.keywords {
+                if d.contains(keyword) { return entry.name }
+            }
+        }
+        return nil
     }
 
-    private func detectToolName() {
+    // MARK: - Browser Tool Enrichment (URL + LLM fallback)
+
+    /// Called when the chat panel is opened. Triggers an auto-switch check,
+    /// and if we're in a browser, enriches the tool name.
+    func onChatPanelOpened() {
+        let _ = resolveToolNameWithAutoSwitch()
+
+        if !isCurrentToolEnriched && ScreenCaptureService.isBrowserBundleID(lastDetectedBundleID) {
+            enrichBrowserToolNameAsync()
+        }
+    }
+
+    /// Enriches the browser tool name asynchronously. First tries the URL domain
+    /// with known-site mapping (already done synchronously), then falls back to
+    /// LLM vision if the URL didn't resolve to a known name.
+    private func enrichBrowserToolNameAsync() {
         toolDetectionTask?.cancel()
         toolDetectionState = .detecting
 
@@ -361,19 +501,21 @@ final class HandyManager: NSObject, ObservableObject {
                 let name = try await claudeAPI.detectToolName(imageData: capture.imageData)
                 guard !Task.isCancelled else { return }
 
+                let previousToolName = currentToolName
                 currentToolName = name
                 toolDetectionState = .detected
-                loadCurrentToolContext()
+                isCurrentToolEnriched = true
+
+                if name != previousToolName {
+                    print("🌐 Browser tool enriched: \"\(previousToolName)\" → \"\(name)\"")
+                    loadHistoryForTool(name)
+                }
             } catch is CancellationError {
-                // Intentional cancellation
+                // Intentional
             } catch {
                 guard !Task.isCancelled else { return }
-                toolDetectionState = .failed
-
-                let (appName, _, _) = ScreenCaptureService.focusedAppInfo()
-                if !appName.isEmpty && appName != "Unknown" {
-                    currentToolName = appName
-                }
+                toolDetectionState = .detected
+                isCurrentToolEnriched = true
             }
         }
     }
@@ -389,7 +531,7 @@ final class HandyManager: NSObject, ObservableObject {
         ttsService.stop()
         isCurrentMessageFromVoice = fromVoice
 
-        let toolName = resolveToolName()
+        let toolName = resolveToolNameWithAutoSwitch()
         let userMsg = ChatMessage(role: .user, content: text, toolName: toolName)
         messages.append(userMsg)
 
@@ -670,7 +812,7 @@ final class HandyManager: NSObject, ObservableObject {
                     return (data: cap.imageData, label: cap.label + dims)
                 }
 
-                let toolName = resolveToolName()
+                let toolName = resolveToolNameWithAutoSwitch()
                 let history = historyManager.recentTurns(for: toolName)
 
                 var fullResponse = ""

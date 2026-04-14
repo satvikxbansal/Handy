@@ -250,4 +250,116 @@ enum ScreenCaptureService {
 
         return (appName, windowTitle, bundleID)
     }
+
+    /// Whether the given bundle ID belongs to a web browser.
+    static func isBrowserBundleID(_ bundleID: String?) -> Bool {
+        guard let bid = bundleID?.lowercased() else { return false }
+        return bid.contains("com.google.chrome") ||
+               bid.contains("com.apple.safari") ||
+               bid.contains("org.mozilla.firefox") ||
+               bid.contains("com.brave.browser") ||
+               bid.contains("com.microsoft.edgemac") ||
+               bid.contains("company.thebrowser.browser") ||  // Arc
+               bid.contains("com.operasoftware.opera")
+    }
+
+    /// Attempts to read the current URL from a browser's address bar via the Accessibility tree.
+    /// Works for Chrome, Safari, Arc, and most Chromium-based browsers.
+    /// Returns nil if AX access fails or the browser isn't supported.
+    static func browserURL() -> String? {
+        guard let frontmost = NSWorkspace.shared.frontmostApplication,
+              isBrowserBundleID(frontmost.bundleIdentifier) else { return nil }
+
+        let appRef = AXUIElementCreateApplication(frontmost.processIdentifier)
+        let bid = frontmost.bundleIdentifier ?? ""
+
+        if bid.lowercased().contains("com.apple.safari") {
+            return safariURL(appRef: appRef)
+        } else {
+            return chromiumURL(appRef: appRef)
+        }
+    }
+
+    /// Reads the URL from Chromium-based browsers (Chrome, Edge, Brave, Arc).
+    /// The address bar is typically an AXTextField with AXRoleDescription "address and search bar"
+    /// or similar, whose AXValue contains the URL.
+    private static func chromiumURL(appRef: AXUIElement) -> String? {
+        var windowValue: AnyObject?
+        guard AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &windowValue) == .success else {
+            return nil
+        }
+
+        if let url = findAXElement(root: windowValue as! AXUIElement, role: "AXTextField", descriptionContains: "address") {
+            return url
+        }
+
+        return findAXElement(root: windowValue as! AXUIElement, role: "AXTextField", descriptionContains: "url")
+    }
+
+    /// Reads the URL from Safari via its AXTextField address bar.
+    private static func safariURL(appRef: AXUIElement) -> String? {
+        var windowValue: AnyObject?
+        guard AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &windowValue) == .success else {
+            return nil
+        }
+
+        if let url = findAXElement(root: windowValue as! AXUIElement, role: "AXTextField", descriptionContains: "address") {
+            return url
+        }
+        return findAXElement(root: windowValue as! AXUIElement, role: "AXComboBox", descriptionContains: nil)
+    }
+
+    /// BFS through the AX tree to find a text field matching role + description.
+    /// Returns its AXValue (the URL string). Depth-limited to avoid runaway traversal.
+    private static func findAXElement(root: AXUIElement, role: String, descriptionContains: String?, maxDepth: Int = 8) -> String? {
+        var queue: [(element: AXUIElement, depth: Int)] = [(root, 0)]
+
+        while !queue.isEmpty {
+            let (element, depth) = queue.removeFirst()
+            guard depth < maxDepth else { continue }
+
+            var roleValue: AnyObject?
+            AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleValue)
+            let currentRole = roleValue as? String ?? ""
+
+            if currentRole == role {
+                if let keyword = descriptionContains {
+                    var descValue: AnyObject?
+                    AXUIElementCopyAttributeValue(element, kAXRoleDescriptionAttribute as CFString, &descValue)
+                    let desc = (descValue as? String ?? "").lowercased()
+                    if desc.contains(keyword.lowercased()) {
+                        var value: AnyObject?
+                        AXUIElementCopyAttributeValue(element, kAXValueAttribute as CFString, &value)
+                        if let urlString = value as? String, !urlString.isEmpty {
+                            return urlString
+                        }
+                    }
+                } else {
+                    var value: AnyObject?
+                    AXUIElementCopyAttributeValue(element, kAXValueAttribute as CFString, &value)
+                    if let urlString = value as? String, !urlString.isEmpty {
+                        return urlString
+                    }
+                }
+            }
+
+            var children: AnyObject?
+            AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children)
+            if let childArray = children as? [AXUIElement] {
+                for child in childArray {
+                    queue.append((child, depth + 1))
+                }
+            }
+        }
+        return nil
+    }
+
+    /// Extracts a clean domain/site name from a URL string.
+    /// "https://github.com/user/repo/pull/42" → "github.com"
+    /// "docs.google.com/document/d/123" → "docs.google.com"
+    static func domainFromURL(_ urlString: String) -> String? {
+        let cleaned = urlString.hasPrefix("http") ? urlString : "https://\(urlString)"
+        guard let url = URL(string: cleaned), let host = url.host else { return nil }
+        return host
+    }
 }
