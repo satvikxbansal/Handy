@@ -257,6 +257,9 @@ enum ScreenCaptureService {
     private static var lastActiveBrowserBundleID: String?
 
     /// Call once at launch — keeps `lastActiveBrowserPID` in sync with user navigation.
+    /// Important: we only **overwrite** when a browser becomes active. We do **not** clear the cache
+    /// when the user switches to Finder, Slack, etc. — otherwise Handy (frontmost) has no browser PID
+    /// to read the address bar from while Chrome sits in the background.
     static func startTrackingActiveBrowser() {
         NotificationCenter.default.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
@@ -268,9 +271,6 @@ enum ScreenCaptureService {
             if isBrowserBundleID(bid) {
                 lastActiveBrowserPID = app.processIdentifier
                 lastActiveBrowserBundleID = bid
-            } else if bid != Bundle.main.bundleIdentifier {
-                lastActiveBrowserPID = nil
-                lastActiveBrowserBundleID = nil
             }
         }
         if let front = NSWorkspace.shared.frontmostApplication,
@@ -307,23 +307,83 @@ enum ScreenCaptureService {
             return browserURL(appPID: front.processIdentifier, bundleID: front.bundleIdentifier ?? "")
         }
 
-        if frontmost?.bundleIdentifier == own,
-           let pid = lastActiveBrowserPID,
-           let running = NSRunningApplication(processIdentifier: pid),
-           isBrowserBundleID(running.bundleIdentifier) {
-            return browserURL(appPID: pid, bundleID: running.bundleIdentifier ?? "")
+        if frontmost?.bundleIdentifier == own {
+            if let pid = lastActiveBrowserPID,
+               let running = NSRunningApplication(processIdentifier: pid),
+               isBrowserBundleID(running.bundleIdentifier) {
+                return browserURL(appPID: pid, bundleID: running.bundleIdentifier ?? "")
+            }
+            if lastActiveBrowserPID != nil {
+                lastActiveBrowserPID = nil
+                lastActiveBrowserBundleID = nil
+            }
+            // e.g. Chrome was already open but never received `didActivate` this session
+            if let inferred = inferRunningBrowserPID() {
+                lastActiveBrowserPID = inferred.pid
+                lastActiveBrowserBundleID = inferred.bundleID
+                return browserURL(appPID: inferred.pid, bundleID: inferred.bundleID)
+            }
+            return nil
         }
 
         return nil
+    }
+
+    /// Picks a running browser to read the URL from when we have no activation cache yet.
+    private static func inferRunningBrowserPID() -> (pid: pid_t, bundleID: String)? {
+        let browsers = NSWorkspace.shared.runningApplications.filter { app in
+            !app.isTerminated && isBrowserBundleID(app.bundleIdentifier)
+        }
+        guard !browsers.isEmpty else { return nil }
+        // Prefer Google Chrome when multiple browsers run — most common for this app’s users.
+        if let chrome = browsers.first(where: { $0.bundleIdentifier?.lowercased().contains("google.chrome") == true }),
+           let bid = chrome.bundleIdentifier {
+            return (chrome.processIdentifier, bid)
+        }
+        guard let first = browsers.first, let bid = first.bundleIdentifier else { return nil }
+        return (first.processIdentifier, bid)
     }
 
     private static func browserURL(appPID: pid_t, bundleID: String) -> String? {
         let appRef = AXUIElementCreateApplication(appPID)
         let bid = bundleID.lowercased()
         if bid.contains("com.apple.safari") {
-            return safariURL(appRef: appRef)
+            if let u = safariURL(appRef: appRef) { return u }
+            return browserURLViaAppleEvents(bundleID: bundleID)
         }
-        return chromiumURL(appRef: appRef)
+        if let u = chromiumURL(appRef: appRef) { return u }
+        return browserURLViaAppleEvents(bundleID: bundleID)
+    }
+
+    /// Reliable URL for Chromium/Safari when Accessibility omits or relabels the omnibox (requires Automation consent for some apps).
+    private static func browserURLViaAppleEvents(bundleID: String) -> String? {
+        let bid = bundleID.lowercased()
+        let script: String
+        if bid.contains("com.apple.safari") {
+            script = """
+            tell application id "\(bundleID)"
+                if (count of windows) = 0 then return ""
+                return URL of front document as string
+            end tell
+            """
+        } else if bid.contains("com.google.chrome") || bid.contains("com.brave.browser") ||
+                    bid.contains("com.microsoft.edgemac") || bid.contains("company.thebrowser.browser") {
+            script = """
+            tell application id "\(bundleID)"
+                if (count of windows) = 0 then return ""
+                return URL of active tab of front window as string
+            end tell
+            """
+        } else {
+            return nil
+        }
+
+        var error: NSDictionary?
+        guard let scpt = NSAppleScript(source: script) else { return nil }
+        let result = scpt.executeAndReturnError(&error)
+        if error != nil { return nil }
+        let s = result.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return s.isEmpty ? nil : s
     }
 
     /// When the browser isn't key, focused window may be nil — try main window, then any window.
@@ -352,7 +412,50 @@ enum ScreenCaptureService {
         if let url = findAXElement(root: window, role: "AXTextField", descriptionContains: "address") {
             return url
         }
-        return findAXElement(root: window, role: "AXTextField", descriptionContains: "url")
+        if let url = findAXElement(root: window, role: "AXTextField", descriptionContains: "url") {
+            return url
+        }
+        return findAXURLValueHeuristic(root: window)
+    }
+
+    /// Chrome’s omnibox often exposes as a text field whose role description is **not** "address" — scan for http(s) values.
+    private static func findAXURLValueHeuristic(root: AXUIElement, maxDepth: Int = 14) -> String? {
+        let roles: Set<String> = ["AXTextField", "AXComboBox", "AXSearchField"]
+        var queue: [(element: AXUIElement, depth: Int)] = [(root, 0)]
+
+        while !queue.isEmpty {
+            let (element, depth) = queue.removeFirst()
+            guard depth < maxDepth else { continue }
+
+            var roleValue: AnyObject?
+            AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleValue)
+            let currentRole = roleValue as? String ?? ""
+
+            if roles.contains(currentRole) {
+                var value: AnyObject?
+                AXUIElementCopyAttributeValue(element, kAXValueAttribute as CFString, &value)
+                if let s = value as? String, looksLikeHTTPURLString(s) {
+                    return s.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+
+            var children: AnyObject?
+            AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children)
+            if let childArray = children as? [AXUIElement] {
+                for child in childArray {
+                    queue.append((child, depth + 1))
+                }
+            }
+        }
+        return nil
+    }
+
+    private static func looksLikeHTTPURLString(_ s: String) -> Bool {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return false }
+        if t.range(of: #"^https?://"#, options: .regularExpression) != nil { return true }
+        if t.range(of: #"^www\."#, options: .regularExpression) != nil { return true }
+        return false
     }
 
     /// Reads the URL from Safari via its AXTextField address bar.
@@ -450,6 +553,11 @@ enum ScreenCaptureService {
         // Google — one umbrella for all *.google.com product hosts
         if host == "google.com" || host.hasSuffix(".google.com") {
             return "google.com"
+        }
+
+        // Slack (incl. app.slack.com / workspace subdomains)
+        if host == "slack.com" || host.hasSuffix(".slack.com") {
+            return "slack.com"
         }
 
         // Default: registrable-style host (strip leading `www` already). Keeps e.g. `figma.com`, `notion.so`.

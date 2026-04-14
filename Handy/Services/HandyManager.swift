@@ -667,7 +667,10 @@ final class HandyManager: NSObject, ObservableObject {
                     overlayResponseText = textForTTS
                 }
 
-                ttsService.speak(textForTTS)
+                // Only speak for push-to-talk replies — typed chat uses the full `chatSystemPrompt` and must not read paragraphs aloud.
+                if fromVoice {
+                    ttsService.speak(textForTTS)
+                }
 
                 isProcessing = false
                 streamingText = ""

@@ -22,5 +22,7 @@
 	<string>Handy uses speech recognition to transcribe your voice input into text.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Handy captures your screen so the AI can see what you see and help you navigate.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Handy asks your browser for the active tab’s URL so chat threads match the site you’re on (e.g. slack.com).</string>
 </dict>
 </plist>

@@ -60,6 +60,44 @@ Custom hotkeys are planned for a future version.
 
 ---
 
+## Quick start (non-technical): zip, Cursor, run
+
+Handy is a normal Mac app you build with **Xcode**. You do not have to be a programmer to try it—if you can install Xcode, use a terminal, and use **Cursor** (or another AI editor), you can get running with a short checklist.
+
+### What you need
+
+- A Mac on **macOS 14 (Sonoma) or later**
+- **Xcode** from the Mac App Store (large download). Open it once after install so it can finish installing components.
+- Enough comfort with **Terminal** to paste a command when needed
+- Optional but practical: **Cursor** so you can open this folder and ask an assistant to help you build and run the app
+
+### Easiest path
+
+1. Download this repository as a **zip**, unzip it, and open the **`Handy`** folder in **Cursor** (or open that folder in Finder and drag it onto Cursor).
+2. Ask the AI something concrete, for example: *“I have Xcode installed. Open `Handy.xcodeproj`, build the Handy target, and tell me how to run it.”* or *“Spin up Handy from this repo.”* It should point you to **Xcode** → open the project → **⌘B** (Build) and **⌘R** (Run).
+3. When Handy launches, macOS may ask for **Accessibility**, **Screen Recording**, **Microphone**, and **Speech Recognition**—grant what you need for the features you want.
+4. Use the **menu bar** hand icon → **Settings** → add your **Claude API key** (it stays in your **Keychain**). After that, you are good to go.
+
+### Restarting Handy from Terminal (after you have built once)
+
+Sometimes you want to **quit any running copy** and **start Handy again** without opening Xcode. The built app lives under Apple’s **DerivedData** folder; the exact folder name **includes a random suffix and is different on every Mac**, so treat long paths below as **examples**—use *your* path after you have built at least once (Finder search for `Handy.app` under `Library/Developer/Xcode/DerivedData`, or ask Cursor where the Debug build landed).
+
+**Option A — run the app executable directly** (example path from one developer machine; **replace with your path**):
+
+```bash
+killall Handy 2>/dev/null
+"/Users/satvik.bansal/Library/Developer/Xcode/DerivedData/Handy-fwxommusmtuzyscczbhbhyghwaok/Build/Products/Debug/Handy.app/Contents/MacOS/Handy" &
+```
+
+**Option B — shorter command** (works if there is only one `Handy-*` DerivedData folder; otherwise use the full path to your `Handy.app`):
+
+```bash
+killall Handy 2>/dev/null
+open "$HOME/Library/Developer/Xcode/DerivedData"/Handy-*/Build/Products/Debug/Handy.app
+```
+
+---
+
 ## Setup
 
 ### Requirements
