@@ -1,4 +1,4 @@
-# Handy
+# Handy ✋🏻
 
 Handy is a native macOS assistant that lives in your menu bar. It looks at your screen, listens when you want it to, and talks back—so you can ask “what do I click?” or “what does this mean?” without pasting screenshots into a separate chat window.
 
