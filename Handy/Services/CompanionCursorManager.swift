@@ -3,7 +3,8 @@ import SwiftUI
 
 /// Manages the blue companion cursor that follows the mouse pointer
 /// and reflects voice state (idle triangle, listening waveform, processing spinner).
-/// One transparent full-screen window per display, similar to Clicky's OverlayWindow.
+/// One transparent full-screen window per display. The cursor is always visible
+/// and can fly to detected UI elements with a Bezier arc animation.
 @MainActor
 final class CompanionCursorManager {
     private var overlayWindows: [CompanionOverlayWindow] = []
@@ -63,10 +64,38 @@ private class CompanionOverlayWindow: NSWindow {
         hasShadow = false
         hidesOnDeactivate = false
         setFrame(screen.frame, display: true)
+
+        if let screenForWindow = NSScreen.screens.first(where: { $0.frame == screen.frame }) {
+            setFrameOrigin(screenForWindow.frame.origin)
+        }
     }
 
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+}
+
+// MARK: - Navigation Mode
+
+enum BuddyNavigationMode {
+    case followingCursor
+    case navigatingToTarget
+    case pointingAtTarget
+}
+
+// MARK: - Size Preference Keys
+
+private struct BubbleSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+private struct NavigationBubbleSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
 }
 
 // MARK: - Companion Cursor View
@@ -80,13 +109,35 @@ struct CompanionCursorView: View {
     @State private var timer: Timer?
     @State private var cursorOpacity: Double = 0.0
 
+    // MARK: - Navigation State
+
+    @State private var buddyNavigationMode: BuddyNavigationMode = .followingCursor
+    @State private var triangleRotationDegrees: Double = -35.0
+    @State private var navigationBubbleText: String = ""
+    @State private var navigationBubbleOpacity: Double = 0.0
+    @State private var navigationBubbleSize: CGSize = .zero
+    @State private var navigationBubbleScale: CGFloat = 1.0
+    @State private var buddyFlightScale: CGFloat = 1.0
+    @State private var cursorPositionWhenNavigationStarted: CGPoint = .zero
+    @State private var navigationAnimationTimer: Timer?
+    @State private var isReturningToCursor: Bool = false
+
+    private let navigationPointerPhrases = [
+        "right here!",
+        "this one!",
+        "over here!",
+        "click this!",
+        "here it is!",
+        "found it!"
+    ]
+
     init(screenFrame: CGRect, manager: HandyManager) {
         self.screenFrame = screenFrame
         self.manager = manager
         let mouse = NSEvent.mouseLocation
         let localX = mouse.x - screenFrame.origin.x
         let localY = screenFrame.height - (mouse.y - screenFrame.origin.y)
-        _cursorPosition = State(initialValue: CGPoint(x: localX + 30, y: localY + 22))
+        _cursorPosition = State(initialValue: CGPoint(x: localX + 35, y: localY + 25))
         _isCursorOnThisScreen = State(initialValue: screenFrame.contains(mouse))
     }
 
@@ -94,24 +145,71 @@ struct CompanionCursorView: View {
         ZStack {
             Color.black.opacity(0.001)
 
+            // Navigation pointer bubble — shown when buddy arrives at a detected element
+            if buddyNavigationMode == .pointingAtTarget && !navigationBubbleText.isEmpty {
+                Text(navigationBubbleText)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(DS.Colors.overlayCursorBlue)
+                            .shadow(
+                                color: DS.Colors.overlayCursorBlue.opacity(0.5 + (1.0 - navigationBubbleScale) * 1.0),
+                                radius: 6 + (1.0 - navigationBubbleScale) * 16,
+                                x: 0, y: 0
+                            )
+                    )
+                    .fixedSize()
+                    .overlay(
+                        GeometryReader { geo in
+                            Color.clear
+                                .preference(key: NavigationBubbleSizePreferenceKey.self, value: geo.size)
+                        }
+                    )
+                    .scaleEffect(navigationBubbleScale)
+                    .opacity(navigationBubbleOpacity)
+                    .position(x: cursorPosition.x + 10 + (navigationBubbleSize.width / 2), y: cursorPosition.y + 18)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.6), value: navigationBubbleScale)
+                    .animation(.easeOut(duration: 0.5), value: navigationBubbleOpacity)
+                    .onPreferenceChange(NavigationBubbleSizePreferenceKey.self) { newSize in
+                        navigationBubbleSize = newSize
+                    }
+            }
+
+            // Blue triangle — visible during idle and responding (TTS playing)
             CompanionTriangle()
                 .fill(DS.Colors.overlayCursorBlue)
                 .frame(width: 16, height: 16)
-                .rotationEffect(.degrees(-35))
-                .shadow(color: DS.Colors.overlayCursorBlue.opacity(0.8), radius: 8, x: 0, y: 0)
-                .opacity(isCursorOnThisScreen && manager.voiceState == .idle ? cursorOpacity : 0)
+                .rotationEffect(.degrees(triangleRotationDegrees))
+                .shadow(color: DS.Colors.overlayCursorBlue, radius: 8 + (buddyFlightScale - 1.0) * 20, x: 0, y: 0)
+                .scaleEffect(buddyFlightScale)
+                .opacity(buddyIsVisibleOnThisScreen && (manager.voiceState == .idle || manager.voiceState == .responding) ? cursorOpacity : 0)
                 .position(cursorPosition)
-                .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
+                .animation(
+                    buddyNavigationMode == .followingCursor
+                        ? .spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0)
+                        : nil,
+                    value: cursorPosition
+                )
                 .animation(.easeIn(duration: 0.25), value: manager.voiceState)
+                .animation(
+                    buddyNavigationMode == .navigatingToTarget ? nil : .easeInOut(duration: 0.3),
+                    value: triangleRotationDegrees
+                )
 
+            // Waveform — replaces triangle while listening
             CompanionWaveformView()
-                .opacity(isCursorOnThisScreen && manager.voiceState == .listening ? cursorOpacity : 0)
+                .opacity(buddyIsVisibleOnThisScreen && manager.voiceState == .listening ? cursorOpacity : 0)
                 .position(cursorPosition)
                 .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
                 .animation(.easeIn(duration: 0.15), value: manager.voiceState)
 
+            // Spinner — shown while processing
             CompanionSpinnerView()
-                .opacity(isCursorOnThisScreen && manager.voiceState == .processing ? cursorOpacity : 0)
+                .opacity(buddyIsVisibleOnThisScreen && manager.voiceState == .processing ? cursorOpacity : 0)
                 .position(cursorPosition)
                 .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
                 .animation(.easeIn(duration: 0.15), value: manager.voiceState)
@@ -119,6 +217,10 @@ struct CompanionCursorView: View {
         .frame(width: screenFrame.width, height: screenFrame.height)
         .ignoresSafeArea()
         .onAppear {
+            let mouseLocation = NSEvent.mouseLocation
+            isCursorOnThisScreen = screenFrame.contains(mouseLocation)
+            let swiftUIPos = convertScreenPointToSwiftUI(mouseLocation)
+            cursorPosition = CGPoint(x: swiftUIPos.x + 35, y: swiftUIPos.y + 25)
             startTrackingCursor()
             withAnimation(.easeIn(duration: 0.5)) {
                 cursorOpacity = 1.0
@@ -126,17 +228,238 @@ struct CompanionCursorView: View {
         }
         .onDisappear {
             timer?.invalidate()
+            navigationAnimationTimer?.invalidate()
+        }
+        .onChange(of: manager.detectedElementScreenLocation) { newLocation in
+            guard let screenLocation = newLocation,
+                  let displayFrame = manager.detectedElementDisplayFrame else {
+                return
+            }
+            guard screenFrame.contains(CGPoint(x: displayFrame.midX, y: displayFrame.midY))
+                  || displayFrame == screenFrame else {
+                return
+            }
+            startNavigatingToElement(screenLocation: screenLocation)
         }
     }
 
+    /// Whether the buddy should be visible on this screen.
+    private var buddyIsVisibleOnThisScreen: Bool {
+        switch buddyNavigationMode {
+        case .followingCursor:
+            if manager.detectedElementScreenLocation != nil {
+                return false
+            }
+            return isCursorOnThisScreen
+        case .navigatingToTarget, .pointingAtTarget:
+            return true
+        }
+    }
+
+    // MARK: - Cursor Tracking
+
     private func startTrackingCursor() {
         timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
-            let mouse = NSEvent.mouseLocation
-            self.isCursorOnThisScreen = self.screenFrame.contains(mouse)
-            let x = mouse.x - self.screenFrame.origin.x
-            let y = self.screenFrame.height - (mouse.y - self.screenFrame.origin.y)
-            self.cursorPosition = CGPoint(x: x + 30, y: y + 22)
+            let mouseLocation = NSEvent.mouseLocation
+            self.isCursorOnThisScreen = self.screenFrame.contains(mouseLocation)
+
+            if self.buddyNavigationMode == .navigatingToTarget && self.isReturningToCursor {
+                let currentMouseInSwiftUI = self.convertScreenPointToSwiftUI(mouseLocation)
+                let distanceFromStart = hypot(
+                    currentMouseInSwiftUI.x - self.cursorPositionWhenNavigationStarted.x,
+                    currentMouseInSwiftUI.y - self.cursorPositionWhenNavigationStarted.y
+                )
+                if distanceFromStart > 100 {
+                    cancelNavigationAndResumeFollowing()
+                }
+                return
+            }
+
+            if self.buddyNavigationMode != .followingCursor {
+                return
+            }
+
+            let swiftUIPos = self.convertScreenPointToSwiftUI(mouseLocation)
+            self.cursorPosition = CGPoint(x: swiftUIPos.x + 35, y: swiftUIPos.y + 25)
         }
+    }
+
+    private func convertScreenPointToSwiftUI(_ screenPoint: CGPoint) -> CGPoint {
+        let x = screenPoint.x - screenFrame.origin.x
+        let y = (screenFrame.origin.y + screenFrame.height) - screenPoint.y
+        return CGPoint(x: x, y: y)
+    }
+
+    // MARK: - Element Navigation
+
+    private func startNavigatingToElement(screenLocation: CGPoint) {
+        let targetInSwiftUI = convertScreenPointToSwiftUI(screenLocation)
+        let offsetTarget = CGPoint(x: targetInSwiftUI.x + 8, y: targetInSwiftUI.y + 12)
+        let clampedTarget = CGPoint(
+            x: max(20, min(offsetTarget.x, screenFrame.width - 20)),
+            y: max(20, min(offsetTarget.y, screenFrame.height - 20))
+        )
+
+        let mouseLocation = NSEvent.mouseLocation
+        cursorPositionWhenNavigationStarted = convertScreenPointToSwiftUI(mouseLocation)
+
+        buddyNavigationMode = .navigatingToTarget
+        isReturningToCursor = false
+
+        animateBezierFlightArc(to: clampedTarget) {
+            guard self.buddyNavigationMode == .navigatingToTarget else { return }
+            self.startPointingAtElement()
+        }
+    }
+
+    private func animateBezierFlightArc(
+        to destination: CGPoint,
+        onComplete: @escaping () -> Void
+    ) {
+        navigationAnimationTimer?.invalidate()
+
+        let startPosition = cursorPosition
+        let endPosition = destination
+        let deltaX = endPosition.x - startPosition.x
+        let deltaY = endPosition.y - startPosition.y
+        let distance = hypot(deltaX, deltaY)
+
+        let flightDuration = min(max(distance / 800.0, 0.6), 1.4)
+        let frameInterval: Double = 1.0 / 60.0
+        let totalFrames = Int(flightDuration / frameInterval)
+        var currentFrame = 0
+
+        let midPoint = CGPoint(
+            x: (startPosition.x + endPosition.x) / 2.0,
+            y: (startPosition.y + endPosition.y) / 2.0
+        )
+        let arcHeight = min(distance * 0.2, 80.0)
+        let controlPoint = CGPoint(x: midPoint.x, y: midPoint.y - arcHeight)
+
+        navigationAnimationTimer = Timer.scheduledTimer(withTimeInterval: frameInterval, repeats: true) { _ in
+            currentFrame += 1
+
+            if currentFrame > totalFrames {
+                self.navigationAnimationTimer?.invalidate()
+                self.navigationAnimationTimer = nil
+                self.cursorPosition = endPosition
+                self.buddyFlightScale = 1.0
+                onComplete()
+                return
+            }
+
+            let linearProgress = Double(currentFrame) / Double(totalFrames)
+            let t = linearProgress * linearProgress * (3.0 - 2.0 * linearProgress)
+
+            let oneMinusT = 1.0 - t
+            let bezierX = oneMinusT * oneMinusT * startPosition.x
+                        + 2.0 * oneMinusT * t * controlPoint.x
+                        + t * t * endPosition.x
+            let bezierY = oneMinusT * oneMinusT * startPosition.y
+                        + 2.0 * oneMinusT * t * controlPoint.y
+                        + t * t * endPosition.y
+
+            self.cursorPosition = CGPoint(x: bezierX, y: bezierY)
+
+            let tangentX = 2.0 * oneMinusT * (controlPoint.x - startPosition.x)
+                         + 2.0 * t * (endPosition.x - controlPoint.x)
+            let tangentY = 2.0 * oneMinusT * (controlPoint.y - startPosition.y)
+                         + 2.0 * t * (endPosition.y - controlPoint.y)
+            self.triangleRotationDegrees = atan2(tangentY, tangentX) * (180.0 / .pi) + 90.0
+
+            let scalePulse = sin(linearProgress * .pi)
+            self.buddyFlightScale = 1.0 + scalePulse * 0.3
+        }
+    }
+
+    private func startPointingAtElement() {
+        buddyNavigationMode = .pointingAtTarget
+        triangleRotationDegrees = -35.0
+
+        navigationBubbleText = ""
+        navigationBubbleOpacity = 1.0
+        navigationBubbleSize = .zero
+        navigationBubbleScale = 0.5
+
+        let pointerPhrase = manager.detectedElementBubbleText
+            ?? navigationPointerPhrases.randomElement()
+            ?? "right here!"
+
+        streamNavigationBubbleCharacter(phrase: pointerPhrase, characterIndex: 0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                guard self.buddyNavigationMode == .pointingAtTarget else { return }
+                self.navigationBubbleOpacity = 0.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    guard self.buddyNavigationMode == .pointingAtTarget else { return }
+                    self.startFlyingBackToCursor()
+                }
+            }
+        }
+    }
+
+    private func streamNavigationBubbleCharacter(
+        phrase: String,
+        characterIndex: Int,
+        onComplete: @escaping () -> Void
+    ) {
+        guard buddyNavigationMode == .pointingAtTarget else { return }
+        guard characterIndex < phrase.count else {
+            onComplete()
+            return
+        }
+
+        let charIndex = phrase.index(phrase.startIndex, offsetBy: characterIndex)
+        navigationBubbleText.append(phrase[charIndex])
+
+        if characterIndex == 0 {
+            navigationBubbleScale = 1.0
+        }
+
+        let characterDelay = Double.random(in: 0.03...0.06)
+        DispatchQueue.main.asyncAfter(deadline: .now() + characterDelay) {
+            self.streamNavigationBubbleCharacter(
+                phrase: phrase,
+                characterIndex: characterIndex + 1,
+                onComplete: onComplete
+            )
+        }
+    }
+
+    private func startFlyingBackToCursor() {
+        let mouseLocation = NSEvent.mouseLocation
+        let cursorInSwiftUI = convertScreenPointToSwiftUI(mouseLocation)
+        let cursorWithOffset = CGPoint(x: cursorInSwiftUI.x + 35, y: cursorInSwiftUI.y + 25)
+
+        cursorPositionWhenNavigationStarted = cursorInSwiftUI
+        buddyNavigationMode = .navigatingToTarget
+        isReturningToCursor = true
+
+        animateBezierFlightArc(to: cursorWithOffset) {
+            self.finishNavigationAndResumeFollowing()
+        }
+    }
+
+    private func cancelNavigationAndResumeFollowing() {
+        navigationAnimationTimer?.invalidate()
+        navigationAnimationTimer = nil
+        navigationBubbleText = ""
+        navigationBubbleOpacity = 0.0
+        navigationBubbleScale = 1.0
+        buddyFlightScale = 1.0
+        finishNavigationAndResumeFollowing()
+    }
+
+    private func finishNavigationAndResumeFollowing() {
+        navigationAnimationTimer?.invalidate()
+        navigationAnimationTimer = nil
+        buddyNavigationMode = .followingCursor
+        isReturningToCursor = false
+        triangleRotationDegrees = -35.0
+        buddyFlightScale = 1.0
+        navigationBubbleText = ""
+        navigationBubbleOpacity = 0.0
+        navigationBubbleScale = 1.0
+        manager.clearDetectedElementLocation()
     }
 }
 

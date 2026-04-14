@@ -32,6 +32,21 @@ final class HandyManager: NSObject, ObservableObject {
     @Published var streamingText = ""
     @Published var loadingVerb = ""
 
+    // MARK: - Element Pointing (observed by CompanionCursorView for fly-to animation)
+
+    /// Global AppKit screen coordinates of a detected UI element the cursor should fly to.
+    @Published var detectedElementScreenLocation: CGPoint?
+    /// The display frame (global AppKit coords) of the screen the element is on.
+    @Published var detectedElementDisplayFrame: CGRect?
+    /// Custom speech bubble text for the pointing animation.
+    @Published var detectedElementBubbleText: String?
+
+    func clearDetectedElementLocation() {
+        detectedElementScreenLocation = nil
+        detectedElementDisplayFrame = nil
+        detectedElementBubbleText = nil
+    }
+
     // MARK: - Tool Detection
 
     @Published var toolDetectionState: ToolDetectionState = .idle
@@ -48,7 +63,6 @@ final class HandyManager: NSObject, ObservableObject {
     private let ttsService = TTSService.shared
     private let claudeAPI = ClaudeAPIService.shared
     private let historyManager = ChatHistoryManager.shared
-    private let overlayManager = OverlayManager()
     private let companionCursor = CompanionCursorManager()
 
     // MARK: - Tutor Mode
@@ -108,24 +122,73 @@ final class HandyManager: NSObject, ObservableObject {
 
     // MARK: - System Prompts
 
-    private static let helpModeSystemPrompt = """
-    you're handy, a friendly always-on assistant that lives in the user's menu bar. the user spoke to you or typed a message, and you can see their screen. your reply may be spoken aloud via text-to-speech, so write naturally. this is an ongoing conversation — you remember previous context.
+    /// Chat interface prompt — detailed, helpful written responses.
+    private static let chatSystemPrompt = """
+    you're handy, a friendly always-on assistant that lives in the user's menu bar. the user typed a message or spoke to you, and you can see their screen. this is an ongoing conversation — you remember previous context.
 
     rules:
-    - default to one or two sentences. be direct and dense. if the user asks to explain more or elaborate, go deeper with no length limit.
+    - give thoughtful, detailed responses. explain the why, not just the what. a few sentences to a short paragraph is ideal — enough to be genuinely useful.
+    - if the user asks a simple yes/no question, give the answer then add useful context.
     - all lowercase, casual, warm. no emojis.
-    - write for the ear, not the eye. short sentences. no lists, bullet points, markdown, or formatting — just natural speech.
     - never say "I can see your screen" or refer to screenshots. just reference what you see naturally, as if you're sitting next to them.
+    - you can help with anything — coding, writing, general knowledge, brainstorming, troubleshooting.
+    - if the user's question relates to what's on their screen, reference specific things you see — name buttons, labels, menu items.
+    - if the screenshot doesn't seem relevant to their question, just answer the question directly.
+    - never say "simply" or "just".
+    - don't read out code verbatim. describe what the code does or what needs to change conversationally.
+    - when it fits naturally, end by planting a seed — mention something bigger or more ambitious they could try, a related concept that goes deeper, or a next-level technique. make it something worth coming back for. it's okay to not end with anything extra if the answer is complete on its own.
     - if you receive multiple screen images, the one labeled "primary focus" is where the cursor is — prioritize that one but reference others if relevant.
 
     element pointing:
-    when your answer references a specific on-screen element the user should look at or interact with, append a POINT tag at the end of your response. use it when pointing would genuinely help — like showing where a button is, highlighting a menu item, or indicating where to click.
+    you have a small blue triangle cursor that can fly to and point at things on screen. use it whenever pointing would genuinely help the user — if they're asking how to do something, looking for a menu, trying to find a button, or need help navigating an app, point at the relevant element. err on the side of pointing rather than not pointing, because it makes your help way more useful and concrete.
+
+    don't point at things when it would be pointless — like if the user asks a general knowledge question, or the conversation has nothing to do with what's on screen, or you'd just be pointing at something obvious they're already looking at.
+
+    when you point, append a coordinate tag at the very end of your response, AFTER your text. the screenshot images are labeled with their pixel dimensions. use those dimensions as the coordinate space. the origin (0,0) is the top-left corner of the image. x increases rightward, y increases downward.
 
     format: [POINT:x,y:label] where x,y are integer pixel coordinates in the screenshot's coordinate space, and label is a short 1-3 word description of the element (like "search bar" or "save button"). if the element is on the cursor's screen you can omit the screen number. if the element is on a DIFFERENT screen, append :screenN where N is the screen number from the image label (e.g. :screen2).
 
     if pointing wouldn't help, append [POINT:none].
 
-    the screenshot images are labeled with their pixel dimensions. use those dimensions as the coordinate space. the origin (0,0) is the top-left corner of the image. x increases rightward, y increases downward.
+    examples:
+    - user asks how to color grade in final cut: "you'll want to open the color inspector — it's right up in the top right area of the toolbar. click that and you'll get all the color wheels and curves. the main color board gives you exposure, saturation, and color controls, and you can also use the color wheels for more precise adjustments. if you want finer control, the curves tab lets you adjust individual channels. [POINT:1100,42:color inspector]"
+    - user asks what html is: "html stands for hypertext markup language — it's basically the skeleton of every web page. it defines the structure: headings, paragraphs, links, images, forms. browsers read html and render it into the visual page you see. it works hand-in-hand with css for styling and javascript for interactivity. [POINT:none]"
+    """
+
+    /// Voice output prompt — concise, speech-optimized responses spoken via TTS.
+    private static let voiceSystemPrompt = """
+    you're handy, a friendly always-on assistant that lives in the user's menu bar. the user just spoke to you via push-to-talk and you can see their screen(s). your reply will be spoken aloud via text-to-speech, so write the way you'd actually talk. this is an ongoing conversation — you remember everything they've said before.
+
+    rules:
+    - default to one or two sentences. be direct and dense. BUT if the user asks you to explain more, go deeper, or elaborate, then go all out — give a thorough, detailed explanation with no length limit.
+    - all lowercase, casual, warm. no emojis.
+    - write for the ear, not the eye. short sentences. no lists, bullet points, markdown, or formatting — just natural speech.
+    - don't use abbreviations or symbols that sound weird read aloud. write "for example" not "e.g.", spell out small numbers.
+    - if the user's question relates to what's on their screen, reference specific things you see.
+    - if the screenshot doesn't seem relevant to their question, just answer the question directly.
+    - you can help with anything — coding, writing, general knowledge, brainstorming.
+    - never say "simply" or "just".
+    - don't read out code verbatim. describe what the code does or what needs to change conversationally.
+    - focus on giving a thorough, useful explanation. don't end with simple yes/no questions like "want me to explain more?" or "should i show you?" — those are dead ends that force the user to just say yes.
+    - instead, when it fits naturally, end by planting a seed — mention something bigger or more ambitious they could try, a related concept that goes deeper, or a next-level technique that builds on what you just explained. make it something worth coming back for, not a question they'd just nod to. it's okay to not end with anything extra if the answer is complete on its own.
+    - if you receive multiple screen images, the one labeled "primary focus" is where the cursor is — prioritize that one but reference others if relevant.
+
+    element pointing:
+    you have a small blue triangle cursor that can fly to and point at things on screen. use it whenever pointing would genuinely help the user — if they're asking how to do something, looking for a menu, trying to find a button, or need help navigating an app, point at the relevant element. err on the side of pointing rather than not pointing, because it makes your help way more useful and concrete.
+
+    don't point at things when it would be pointless — like if the user asks a general knowledge question, or the conversation has nothing to do with what's on screen, or you'd just be pointing at something obvious they're already looking at.
+
+    when you point, append a coordinate tag at the very end of your response, AFTER your spoken text. the screenshot images are labeled with their pixel dimensions. use those dimensions as the coordinate space. the origin (0,0) is the top-left corner of the image. x increases rightward, y increases downward.
+
+    format: [POINT:x,y:label] where x,y are integer pixel coordinates in the screenshot's coordinate space, and label is a short 1-3 word description of the element (like "search bar" or "save button"). if the element is on the cursor's screen you can omit the screen number. if the element is on a DIFFERENT screen, append :screenN where N is the screen number from the image label (e.g. :screen2).
+
+    if pointing wouldn't help, append [POINT:none].
+
+    examples:
+    - user asks how to color grade in final cut: "you'll want to open the color inspector — it's right up in the top right area of the toolbar. click that and you'll get all the color wheels and curves. [POINT:1100,42:color inspector]"
+    - user asks what html is: "html stands for hypertext markup language, it's basically the skeleton of every web page. curious how it connects to the css you're looking at? [POINT:none]"
+    - user asks how to commit in xcode: "see that source control menu up top? click that and hit commit, or you can use command option c as a shortcut. [POINT:285,11:source control]"
+    - element is on screen 2 (not where cursor is): "that's over on your other monitor — see the terminal window? [POINT:400,300:terminal:screen2]"
     """
 
     private static let tutorModeSystemPrompt = """
@@ -138,9 +201,11 @@ final class HandyManager: NSObject, ObservableObject {
     - explain WHY, not just what. "click that gear icon — that's where you'll find export settings" is better than "click the gear icon."
     - keep it conversational and encouraging. celebrate small wins.
     - if they seem stuck, offer the next logical step. if they're exploring, let them but add context.
+    - if the screen hasn't changed since your last observation, say something encouraging or suggest what to click next — don't repeat yourself.
 
     rules:
     - all lowercase, casual, warm. no emojis. write for spoken delivery.
+    - short sentences. no lists, bullet points, markdown, or formatting — just natural speech.
     - check conversation history to avoid repeating yourself. each observation should build on the last.
     - be specific about what you see — name buttons, labels, menu items.
 
@@ -224,22 +289,7 @@ final class HandyManager: NSObject, ObservableObject {
     // MARK: - Companion Cursor
 
     private func bindCompanionCursor() {
-        $voiceState
-            .receive(on: RunLoop.main)
-            .sink { [weak self] state in
-                guard let self else { return }
-                switch state {
-                case .listening, .processing:
-                    if !self.companionCursor.isShowing {
-                        self.companionCursor.show()
-                    }
-                case .idle, .responding:
-                    if self.companionCursor.isShowing {
-                        self.companionCursor.hide()
-                    }
-                }
-            }
-            .store(in: &cancellables)
+        companionCursor.show()
     }
 
     // MARK: - Tool Context
@@ -314,9 +364,14 @@ final class HandyManager: NSObject, ObservableObject {
 
     // MARK: - Send Message
 
-    func sendMessage(_ text: String) {
+    /// Whether the current message originated from voice input (Control+Z).
+    /// Used to select the voice-optimized system prompt for TTS-bound responses.
+    private var isCurrentMessageFromVoice = false
+
+    func sendMessage(_ text: String, fromVoice: Bool = false) {
         currentResponseTask?.cancel()
         ttsService.stop()
+        isCurrentMessageFromVoice = fromVoice
 
         let toolName = resolveToolName()
         let userMsg = ChatMessage(role: .user, content: text, toolName: toolName)
@@ -353,9 +408,14 @@ final class HandyManager: NSObject, ObservableObject {
                 }
 
                 let history = historyManager.recentTurns(for: toolName)
-                let systemPrompt = AppSettings.shared.assistantMode == .tutor
-                    ? Self.tutorModeSystemPrompt
-                    : Self.helpModeSystemPrompt
+                let systemPrompt: String
+                if AppSettings.shared.assistantMode == .tutor {
+                    systemPrompt = Self.tutorModeSystemPrompt
+                } else if fromVoice {
+                    systemPrompt = Self.voiceSystemPrompt
+                } else {
+                    systemPrompt = Self.chatSystemPrompt
+                }
 
                 let introPrefix = messages.count <= 1
                     ? "so we are working with \(toolName), let me help you with your query. "
@@ -421,8 +481,13 @@ final class HandyManager: NSObject, ObservableObject {
                     } ?? captures[0]
 
                     let globalPoint = PointParser.mapToScreenCoordinates(point: coord, capture: targetCapture)
-                    overlayManager.pointAt(globalPoint, label: pointResult.label ?? "")
-                    }
+
+                    voiceState = .idle
+
+                    detectedElementBubbleText = pointResult.label
+                    detectedElementScreenLocation = globalPoint
+                    detectedElementDisplayFrame = targetCapture.displayFrame
+                }
 
                 ttsService.speak(cleanedText)
 
@@ -497,7 +562,7 @@ final class HandyManager: NSObject, ObservableObject {
         voiceState = .idle
 
         if !transcript.isEmpty {
-            sendMessage(transcript)
+            sendMessage(transcript, fromVoice: true)
             pendingTranscript = ""
         }
     }
@@ -593,7 +658,10 @@ final class HandyManager: NSObject, ObservableObject {
                 let pointResult = PointParser.parse(from: fullResponse)
                 if let coord = pointResult.coordinate, let capture = captures.first {
                     let globalPoint = PointParser.mapToScreenCoordinates(point: coord, capture: capture)
-                    overlayManager.pointAt(globalPoint, label: pointResult.label ?? "")
+
+                    detectedElementBubbleText = pointResult.label
+                    detectedElementScreenLocation = globalPoint
+                    detectedElementDisplayFrame = capture.displayFrame
                 }
 
                 ttsService.speak(cleaned)
