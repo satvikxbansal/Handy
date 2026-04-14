@@ -17,6 +17,16 @@ struct ChatMessage: Identifiable, Codable {
         self.isStreaming = isStreaming
     }
 
+    /// Preserves `id` and `timestamp` when updating an existing row (e.g. streaming deltas).
+    init(id: UUID, role: MessageRole, content: String, timestamp: Date, toolName: String?, isStreaming: Bool) {
+        self.id = id
+        self.role = role
+        self.content = content
+        self.timestamp = timestamp
+        self.toolName = toolName
+        self.isStreaming = isStreaming
+    }
+
     enum MessageRole: String, Codable {
         case user
         case assistant

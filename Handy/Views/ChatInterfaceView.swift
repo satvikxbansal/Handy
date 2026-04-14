@@ -198,6 +198,20 @@ struct ChatInterfaceView: View {
                     }
                 }
             }
+            .onChange(of: manager.isProcessing) { _, processing in
+                if !processing, let lastID = manager.messages.last?.id {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo(lastID, anchor: .bottom)
+                    }
+                }
+            }
+            .onAppear {
+                if let lastID = manager.messages.last?.id {
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(lastID, anchor: .bottom)
+                    }
+                }
+            }
         }
     }
 

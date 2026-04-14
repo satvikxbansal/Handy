@@ -702,9 +702,12 @@ final class HandyManager: NSObject, ObservableObject {
                     streamingText = introPrefix + fullResponse
 
                     if let idx = messages.lastIndex(where: { $0.id == assistantMsg.id }) {
+                        let existing = messages[idx]
                         messages[idx] = ChatMessage(
+                            id: existing.id,
                             role: .assistant,
                             content: introPrefix + fullResponse,
+                            timestamp: existing.timestamp,
                             toolName: toolName,
                             isStreaming: true
                         )
@@ -735,9 +738,12 @@ final class HandyManager: NSObject, ObservableObject {
                 voiceState = .responding
 
                 if let idx = messages.lastIndex(where: { $0.id == assistantMsg.id }) {
+                    let existing = messages[idx]
                     messages[idx] = ChatMessage(
+                        id: existing.id,
                         role: .assistant,
                         content: textForChat,
+                        timestamp: existing.timestamp,
                         toolName: toolName,
                         isStreaming: false
                     )
@@ -787,6 +793,18 @@ final class HandyManager: NSObject, ObservableObject {
                 voiceState = .idle
                 isProcessing = false
                 errorMessage = error.localizedDescription
+
+                if let idx = messages.lastIndex(where: { $0.role == .assistant && $0.isStreaming }) {
+                    let existing = messages[idx]
+                    messages[idx] = ChatMessage(
+                        id: existing.id,
+                        role: .assistant,
+                        content: existing.content.isEmpty ? "(response failed)" : existing.content,
+                        timestamp: existing.timestamp,
+                        toolName: existing.toolName,
+                        isStreaming: false
+                    )
+                }
 
                 let errorMsg = ChatMessage(role: .system, content: "Error: \(error.localizedDescription)")
                 messages.append(errorMsg)
