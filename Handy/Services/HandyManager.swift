@@ -254,11 +254,13 @@ final class HandyManager: NSObject, ObservableObject {
         if currentToolName.isEmpty && !appName.isEmpty && appName != "Unknown" {
             if ScreenCaptureService.isBrowserBundleID(bundleID) {
                 currentToolName = resolveBrowserToolName(appName: appName, windowTitle: windowTitle)
+                lastBrowserSiteKey = Self.makeBrowserSiteKey(appName: appName, windowTitle: windowTitle)
             } else {
                 currentToolName = appName
                 isCurrentToolEnriched = true
+                lastBrowserSiteKey = nil
             }
-            print("🚀 Initial tool name: \"\(currentToolName)\"")
+            print("🚀 Initial tool name: \"\(currentToolName)\" siteKey: \(lastBrowserSiteKey ?? "nil")")
         }
 
         loadCurrentToolContext()
@@ -330,6 +332,10 @@ final class HandyManager: NSObject, ObservableObject {
     /// Never stores Handy's own bundle ID — always tracks the real "target" app.
     private var lastDetectedBundleID: String?
 
+    /// Within Chrome/Safari/etc., the last tab/site we keyed chat history to (e.g. `host:github.com`).
+    /// Bundle ID does not change when the user switches tabs, so this is required to switch context.
+    private var lastBrowserSiteKey: String?
+
     /// Whether the current tool name came from browser enrichment (URL/LLM).
     /// Prevents re-enriching the same browser session on every message.
     private var isCurrentToolEnriched = false
@@ -362,6 +368,12 @@ final class HandyManager: NSObject, ObservableObject {
         if frontmostBundleID != Bundle.main.bundleIdentifier {
             lastDetectedBundleID = frontmostBundleID
         }
+        if ScreenCaptureService.isBrowserBundleID(frontmostBundleID) {
+            let (an, wt, _) = ScreenCaptureService.focusedAppInfo()
+            lastBrowserSiteKey = Self.makeBrowserSiteKey(appName: an, windowTitle: wt)
+        } else {
+            lastBrowserSiteKey = nil
+        }
 
         loadHistoryForTool(name)
     }
@@ -386,25 +398,38 @@ final class HandyManager: NSObject, ObservableObject {
         }
 
         let isBrowser = ScreenCaptureService.isBrowserBundleID(bundleID)
-        let appChanged = bundleID != nil && bundleID != lastDetectedBundleID && lastDetectedBundleID != nil
+        let siteKey = isBrowser ? Self.makeBrowserSiteKey(appName: appName, windowTitle: windowTitle) : nil
 
-        if appChanged || currentToolName.isEmpty {
+        let appChanged = bundleID != nil && bundleID != lastDetectedBundleID && lastDetectedBundleID != nil
+        let browserSiteChanged = isBrowser && siteKey != nil && lastBrowserSiteKey != nil && siteKey != lastBrowserSiteKey
+
+        let needsContextUpdate = currentToolName.isEmpty || appChanged || browserSiteChanged
+
+        if needsContextUpdate {
             let previousTool = currentToolName
 
             if isBrowser {
                 let browserToolName = resolveBrowserToolName(appName: appName, windowTitle: windowTitle)
                 currentToolName = browserToolName
-                isCurrentToolEnriched = false
             } else {
                 currentToolName = appName
                 isCurrentToolEnriched = true
+                lastBrowserSiteKey = nil
             }
 
             lastDetectedBundleID = bundleID
+            if isBrowser {
+                lastBrowserSiteKey = siteKey
+            }
             toolDetectionState = .detected
 
-            if currentToolName != previousTool {
-                print("🔄 Tool context switched: \"\(previousTool)\" → \"\(currentToolName)\" (bundle: \(bundleID ?? "nil"))")
+            let historyKeyChanged = currentToolName != previousTool || browserSiteChanged
+            if historyKeyChanged {
+                if browserSiteChanged {
+                    print("🔄 Browser site changed: \"\(previousTool)\" → \"\(currentToolName)\" (site: \(siteKey ?? "nil"))")
+                } else {
+                    print("🔄 Tool context switched: \"\(previousTool)\" → \"\(currentToolName)\" (bundle: \(bundleID ?? "nil"))")
+                }
                 loadHistoryForTool(currentToolName)
             }
 
@@ -412,10 +437,21 @@ final class HandyManager: NSObject, ObservableObject {
                 enrichBrowserToolNameAsync()
             }
         } else {
-            print("🔍   → No change (same app)")
+            print("🔍   → No change (same app\(isBrowser ? ", same site \(lastBrowserSiteKey ?? "nil")" : ""))")
         }
 
         return currentToolName
+    }
+
+    /// Identity key for the active browser tab/page (hostname preferred).
+    private static func makeBrowserSiteKey(appName: String, windowTitle: String) -> String? {
+        if let url = ScreenCaptureService.browserURL(),
+           let key = ScreenCaptureService.normalizedBrowserSiteKey(from: url) {
+            return key
+        }
+        let cleaned = cleanBrowserWindowTitle(windowTitle, appName: appName)
+        if cleaned.isEmpty { return nil }
+        return "title:\(cleaned.lowercased())"
     }
 
     /// For browsers, resolves the best synchronous tool name available.
@@ -500,6 +536,7 @@ final class HandyManager: NSObject, ObservableObject {
             (["jira.atlassian.com", "atlassian.net"], "Jira"),
             (["confluence.atlassian.com"], "Confluence"),
             (["trello.com"], "Trello"),
+            (["linkedin.com"], "LinkedIn"),
             (["medium.com"], "Medium"),
             (["codepen.io"], "CodePen"),
             (["codesandbox.io"], "CodeSandbox"),

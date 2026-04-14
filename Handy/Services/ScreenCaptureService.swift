@@ -362,4 +362,12 @@ enum ScreenCaptureService {
         guard let url = URL(string: cleaned), let host = url.host else { return nil }
         return host
     }
+
+    /// Stable key for segregating chat history per website within the same browser process.
+    /// Uses normalized hostname so tab changes to a different site always change the key.
+    static func normalizedBrowserSiteKey(from urlString: String) -> String? {
+        guard let host = domainFromURL(urlString)?.lowercased() else { return nil }
+        let h = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+        return "host:\(h)"
+    }
 }
