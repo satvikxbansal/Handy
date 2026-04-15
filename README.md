@@ -12,11 +12,11 @@ The deeper idea is **context that matches how you actually work**. Most assistan
 
 ### Smart app switch (tool context)
 
+Plain English: **one brain, many notebooks**—and it flips to the right notebook when you change what you are working in.
+
 When you move from one app to another, you are not having one continuous chat with “the computer”—you are doing different jobs. Handy treats each **focused application** as its own **tool context**. If you were talking about a bug in your editor and then switch to the browser to check docs, the assistant **switches threads** to match: it loads the history and labels for **that** app, not the previous one.
 
 This happens automatically before messages are sent (and when you open the chat panel): the app compares the **current frontmost app** to what it saw last. If you changed apps—or Handy did not yet know a name—it **updates the active tool** and **loads the saved conversation** for that tool. If Handy itself is frontmost (for example you pulled the chat forward), it **does not throw away** your current context just because the menu bar app is active.
-
-Plain English: **one brain, many notebooks**—and it flips to the right notebook when you change what you are working in.
 
 ### Layered answers (pointer, bubbles, and the full chat)
 
