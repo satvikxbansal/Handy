@@ -204,4 +204,4 @@ Default STT uses `SFSpeechRecognizer`: on Apple Silicon, **on-device** mode is u
 
 ## License
 
-MIT
+Bansal Labs®
