@@ -9,6 +9,21 @@ struct ChatInterfaceView: View {
     @State private var isEditingToolName = false
     @State private var showSettings = false
     @State private var scrollProxy: ScrollViewProxy?
+    @State private var statusDotHovered = false
+    @State private var statusHoverPhrase: String = ""
+    @State private var statusDotHoverDismissTask: Task<Void, Never>?
+
+    /// Rotating hover copy for the status dot — a random line is chosen on each hover.
+    private static let statusHoverRoster: [String] = [
+        "Office hours",
+        "Ask right away",
+        "Always by your side",
+        "A nudge away",
+        "Tap, ask, go",
+        "Here for the quick wins",
+        "Clarity, one prompt away",
+        "Whisper-close when you need it",
+    ]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,11 +49,11 @@ struct ChatInterfaceView: View {
 
     private var headerBar: some View {
         HStack {
-            HStack(spacing: DS.Spacing.sm) {
-                statusDot
+            HStack(alignment: .center, spacing: DS.Spacing.sm) {
                 Text("Handy")
-                    .font(.system(size: 16, weight: .bold, design: .default))
+                    .font(.system(size: 20, weight: .heavy, design: .default))
                     .foregroundColor(DS.Colors.textPrimary)
+                statusDot
             }
 
             Spacer()
@@ -61,18 +76,54 @@ struct ChatInterfaceView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
+    /// Label sits on the same row as the dot (trailing) so it reads as one unit; only grows width on hover.
     private var statusDot: some View {
-        Circle()
-            .fill(statusColor)
-            .frame(width: 8, height: 8)
-            .overlay(
-                Circle()
-                    .fill(statusColor.opacity(0.4))
-                    .frame(width: 14, height: 14)
-                    .opacity(manager.voiceState == .listening ? 1 : 0)
-                    .scaleEffect(manager.voiceState == .listening ? 1.2 : 0.8)
-                    .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: manager.voiceState)
-            )
+        HStack(alignment: .center, spacing: DS.Spacing.xs) {
+            Circle()
+                .fill(statusColor)
+                .frame(width: 8, height: 8)
+                .overlay(
+                    Circle()
+                        .fill(statusColor.opacity(0.4))
+                        .frame(width: 14, height: 14)
+                        .opacity(manager.voiceState == .listening ? 1 : 0)
+                        .scaleEffect(manager.voiceState == .listening ? 1.2 : 0.8)
+                        .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: manager.voiceState)
+                )
+
+            if statusDotHovered {
+                Text(statusHoverPhrase)
+                    .font(DS.Typography.caption)
+                    .italic()
+                    .foregroundColor(DS.Colors.textTertiary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(DS.Colors.surfaceElevated.opacity(0.55))
+                    )
+                    .fixedSize()
+                    .transition(.opacity)
+            }
+        }
+        .frame(height: 20, alignment: .center)
+        .accessibilityHint(statusDotHovered ? statusHoverPhrase : "")
+        .onHover { updateStatusDotHover($0) }
+        .animation(nil, value: statusDotHovered)
+    }
+
+    private func updateStatusDotHover(_ hovering: Bool) {
+        statusDotHoverDismissTask?.cancel()
+        if hovering {
+            statusHoverPhrase = Self.statusHoverRoster.randomElement() ?? "Office hours"
+            statusDotHovered = true
+            return
+        }
+        statusDotHoverDismissTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 180_000_000)
+            guard !Task.isCancelled else { return }
+            statusDotHovered = false
+        }
     }
 
     private var statusColor: Color {
