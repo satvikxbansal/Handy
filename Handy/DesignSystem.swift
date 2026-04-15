@@ -32,6 +32,9 @@ enum DS {
 
         static let overlayTranscriptBubble = Color(hex: "CA8A04")
         static let overlayResponseBubble = Color(hex: "16A34A")
+
+        /// Subtle ring around the floating accessory widget (idle); turns white on hover via the view layer.
+        static let floatingWidgetOutline = Color(hex: "F59E0B").opacity(0.55)
     }
 
     // MARK: - Typography (SF Pro - system default)

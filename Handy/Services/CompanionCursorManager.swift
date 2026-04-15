@@ -112,6 +112,15 @@ private struct ResponseBubbleSizePreferenceKey: PreferenceKey {
     }
 }
 
+/// How long the buddy stays at the target after a successful POINT before flying back.
+private enum PointDwellTiming {
+    /// Voice flow (no blue label): buddy holds at element before return flight.
+    static let atTargetVoiceSeconds: TimeInterval = 2.0
+    /// After the blue pointer label finishes streaming: hold before fade, then `fadeTailSeconds` before flight.
+    static let afterLabelStreamingSeconds: TimeInterval = 4.0
+    static let fadeTailSeconds: TimeInterval = 0.5
+}
+
 // MARK: - Companion Cursor View
 
 struct CompanionCursorView: View {
@@ -217,8 +226,10 @@ struct CompanionCursorView: View {
         ZStack {
             Color.black.opacity(0.001)
 
-            // Navigation pointer bubble — shown when buddy arrives at a detected element
-            if buddyNavigationMode == .pointingAtTarget && !navigationBubbleText.isEmpty {
+            // Navigation pointer bubble — shown when buddy arrives at a detected element (hidden during voice replies to avoid overlapping the green response bubble).
+            if !manager.suppressCompanionNavigationLabelBubble
+                && buddyNavigationMode == .pointingAtTarget
+                && !navigationBubbleText.isEmpty {
                 Text(navigationBubbleText)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white)
@@ -361,14 +372,12 @@ struct CompanionCursorView: View {
             navigationAnimationTimer?.invalidate()
         }
         .onChange(of: manager.detectedElementScreenLocation) { newLocation in
-            guard let screenLocation = newLocation,
-                  let displayFrame = manager.detectedElementDisplayFrame else {
-                return
-            }
-            guard screenFrame.contains(CGPoint(x: displayFrame.midX, y: displayFrame.midY))
-                  || displayFrame == screenFrame else {
-                return
-            }
+            guard let screenLocation = newLocation else { return }
+            // Use the mapped target point in global AppKit space — not `displayFrame.midX/Y`.
+            // `HandyScreenCapture.displayFrame` can differ slightly from this overlay's `NSScreen.frame`
+            // (SCDisplay ↔ NSScreen matching, fallback rects), which caused **no screen** to accept the
+            // navigation and the buddy never flew — even when coordinates were valid.
+            guard screenFrame.contains(screenLocation) else { return }
             startNavigatingToElement(screenLocation: screenLocation)
         }
         .onChange(of: manager.overlayTranscriptText) { newText in
@@ -545,15 +554,26 @@ struct CompanionCursorView: View {
         navigationBubbleSize = .zero
         navigationBubbleScale = 0.5
 
+        // Voice replies use the green bubble for text — skip the blue label and return sooner.
+        if manager.suppressCompanionNavigationLabelBubble {
+            navigationBubbleOpacity = 0.0
+            navigationBubbleScale = 1.0
+            DispatchQueue.main.asyncAfter(deadline: .now() + PointDwellTiming.atTargetVoiceSeconds) {
+                guard self.buddyNavigationMode == .pointingAtTarget else { return }
+                self.startFlyingBackToCursor()
+            }
+            return
+        }
+
         let pointerPhrase = manager.detectedElementBubbleText
             ?? navigationPointerPhrases.randomElement()
             ?? "right here!"
 
         streamNavigationBubbleCharacter(phrase: pointerPhrase, characterIndex: 0) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + PointDwellTiming.afterLabelStreamingSeconds) {
                 guard self.buddyNavigationMode == .pointingAtTarget else { return }
                 self.navigationBubbleOpacity = 0.0
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + PointDwellTiming.fadeTailSeconds) {
                     guard self.buddyNavigationMode == .pointingAtTarget else { return }
                     self.startFlyingBackToCursor()
                 }

@@ -28,6 +28,18 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessoryInteractionView.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift"
         },
         {
@@ -49,6 +61,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/CompanionCursorManager.swift"
         },
         {
           "kind" : "file",
@@ -108,12 +124,16 @@
       "moduleOutputPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules/Handy.swiftmodule",
       "objects" : [
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetController.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetView.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessoryInteractionView.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/CompanionCursorManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager.swift.o",
@@ -189,6 +209,18 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessoryInteractionView.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.swift.o"
         },
         {
@@ -210,6 +242,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/CompanionCursorManager.swift.o"
         },
         {
           "kind" : "file",
@@ -263,12 +299,16 @@
       "prepareForIndexing" : false,
       "sources" : [
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetController.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetView.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessoryInteractionView.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ChatMessage.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ChatHistoryManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/CompanionCursorManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HandyManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HotkeyManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/OverlayManager.swift",
@@ -297,12 +337,16 @@
       "handy",
       "-c",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetController.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetView.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessoryInteractionView.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ChatMessage.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ChatHistoryManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/CompanionCursorManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HandyManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HotkeyManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/OverlayManager.swift",
@@ -417,6 +461,18 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessoryInteractionView.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift"
         },
         {
@@ -438,6 +494,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/CompanionCursorManager.swift"
         },
         {
           "kind" : "file",
@@ -519,7 +579,23 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/CompanionCursorManager.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessoryInteractionView.swift.o"
         },
         {
           "kind" : "file",

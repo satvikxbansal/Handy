@@ -1,10 +1,14 @@
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/DesignSystem.swift
+/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetController.swift
+/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessWidgetView.swift
+/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/FloatingAccessWidget/FloatingAccessoryInteractionView.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ChatMessage.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ChatHistoryManager.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift
+/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/CompanionCursorManager.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HandyManager.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HotkeyManager.swift
 /Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/OverlayManager.swift

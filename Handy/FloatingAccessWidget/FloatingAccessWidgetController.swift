@@ -99,6 +99,16 @@ final class FloatingAccessWidgetController: NSObject {
         hosting.frame = container.bounds
         hosting.autoresizingMask = [.width, .height]
 
+        // Light mode: `NSHostingView` and plain `NSView` containers default to an opaque system fill,
+        // which shows as a sharp-corner dull rectangle behind the rounded SwiftUI chrome.
+        func clearBackground(_ view: NSView) {
+            view.wantsLayer = true
+            view.layer?.backgroundColor = NSColor.clear.cgColor
+            view.layer?.isOpaque = false
+        }
+        clearBackground(container)
+        clearBackground(hosting)
+
         let dragSurface = FloatingAccessoryInteractionNSView()
         dragSurface.frame = container.bounds
         dragSurface.autoresizingMask = [.width, .height]
