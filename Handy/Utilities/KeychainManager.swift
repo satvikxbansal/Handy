@@ -76,7 +76,7 @@ enum KeychainManager {
         case claude = "handy_claude_api_key"
         case openAI = "handy_openai_api_key"
         case assemblyAI = "handy_assemblyai_api_key"
-        case elevenLabs = "handy_elevenlabs_api_key"
+        case sarvam = "handy_sarvam_api_key"
     }
 
     static func saveAPIKey(_ type: APIKeyType, value: String) throws {
@@ -100,5 +100,14 @@ enum KeychainManager {
 
     static func hasAPIKey(_ type: APIKeyType) -> Bool {
         getAPIKey(type) != nil
+    }
+
+    /// One-time copy from the former ElevenLabs key slot so users are not prompted to re-enter after the Sarvam swap.
+    private static let legacyElevenLabsAccount = "handy_elevenlabs_api_key"
+
+    static func migrateLegacyElevenLabsKeyToSarvamIfNeeded() {
+        guard getAPIKey(.sarvam) == nil else { return }
+        guard let legacy = read(key: legacyElevenLabsAccount), !legacy.isEmpty else { return }
+        try? saveAPIKey(.sarvam, value: legacy)
     }
 }

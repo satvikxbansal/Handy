@@ -7,11 +7,11 @@ struct SettingsView: View {
     @State private var claudeKeyInput = ""
     @State private var openAIKeyInput = ""
     @State private var assemblyAIKeyInput = ""
-    @State private var elevenLabsKeyInput = ""
+    @State private var sarvamKeyInput = ""
     @State private var showClaudeKey = false
     @State private var showOpenAIKey = false
     @State private var showAssemblyAIKey = false
-    @State private var showElevenLabsKey = false
+    @State private var showSarvamKey = false
     @State private var keySaveStatus: String?
     @State private var selectedSection: SettingsSection = .brain
 
@@ -137,15 +137,24 @@ struct SettingsView: View {
                 )
             }
 
-            if settings.ttsProvider == .elevenLabs {
+            if settings.ttsProvider == .sarvam {
                 apiKeyField(
-                    title: "ElevenLabs API Key",
-                    placeholder: "your-elevenlabs-key",
-                    text: $elevenLabsKeyInput,
-                    isRevealed: $showElevenLabsKey,
-                    keyType: .elevenLabs,
+                    title: "Sarvam API Key",
+                    placeholder: "your Sarvam subscription key",
+                    text: $sarvamKeyInput,
+                    isRevealed: $showSarvamKey,
+                    keyType: .sarvam,
                     isRequired: true
                 )
+
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    Text("Bulbul v3 voice")
+                        .font(DS.Typography.bodySmall)
+                        .foregroundColor(DS.Colors.textSecondary)
+                    ForEach(SarvamVoice.allCases, id: \.self) { voice in
+                        sarvamVoiceRow(voice: voice)
+                    }
+                }
             }
 
             if let status = keySaveStatus {
@@ -344,6 +353,48 @@ struct SettingsView: View {
         }
     }
 
+    private func sarvamVoiceRow(voice: SarvamVoice) -> some View {
+        Button(action: { settings.sarvamVoice = voice }) {
+            HStack(spacing: DS.Spacing.md) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(voice.pickerTitle)
+                            .font(DS.Typography.titleSmall)
+                            .foregroundColor(DS.Colors.textPrimary)
+                        if voice == .ritu {
+                            Text("default")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundColor(DS.Colors.accent)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(DS.Colors.accentSubtle)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    Text(voice.pickerSubtitle)
+                        .font(DS.Typography.caption)
+                        .foregroundColor(DS.Colors.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                if settings.sarvamVoice == voice {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(DS.Colors.accent)
+                }
+            }
+            .padding(DS.Spacing.md)
+            .background(settings.sarvamVoice == voice ? DS.Colors.accentSubtle.opacity(0.3) : DS.Colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.md)
+                    .stroke(settings.sarvamVoice == voice ? DS.Colors.accent.opacity(0.5) : DS.Colors.border, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private func modeCard(mode: AssistantMode, icon: String, title: String, description: String) -> some View {
         Button(action: { settings.assistantMode = mode }) {
             HStack(spacing: DS.Spacing.md) {
@@ -412,7 +463,7 @@ struct SettingsView: View {
         claudeKeyInput = KeychainManager.getAPIKey(.claude) ?? ""
         openAIKeyInput = KeychainManager.getAPIKey(.openAI) ?? ""
         assemblyAIKeyInput = KeychainManager.getAPIKey(.assemblyAI) ?? ""
-        elevenLabsKeyInput = KeychainManager.getAPIKey(.elevenLabs) ?? ""
+        sarvamKeyInput = KeychainManager.getAPIKey(.sarvam) ?? ""
     }
 
     private func saveKey(_ value: String, type: KeychainManager.APIKeyType) {

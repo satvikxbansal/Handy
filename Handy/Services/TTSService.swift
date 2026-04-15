@@ -3,8 +3,8 @@ import AVFoundation
 import AppKit
 
 /// Text-to-Speech service with pluggable providers.
-/// Default: macOS AVSpeechSynthesizer.
-/// Optional: ElevenLabs via API key.
+/// Default: macOS `AVSpeechSynthesizer`.
+/// Optional: [Sarvam Bulbul v3](https://docs.sarvam.ai/api-reference-docs/getting-started/models/bulbul) via API key; falls back to system speech on any failure.
 final class TTSService: NSObject, ObservableObject {
     static let shared = TTSService()
 
@@ -19,11 +19,14 @@ final class TTSService: NSObject, ObservableObject {
     }
 
     func speak(_ text: String) {
-        if AppSettings.shared.ttsProvider == .elevenLabs,
-           let _ = KeychainManager.getAPIKey(.elevenLabs) {
-            speakWithElevenLabs(text)
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        if AppSettings.shared.ttsProvider == .sarvam,
+           KeychainManager.getAPIKey(.sarvam) != nil {
+            speakWithSarvam(trimmed)
         } else {
-            speakWithSystem(text)
+            speakWithSystem(trimmed)
         }
     }
 
@@ -42,54 +45,86 @@ final class TTSService: NSObject, ObservableObject {
         systemSynth.speak(utterance)
     }
 
-    private func speakWithElevenLabs(_ text: String) {
-        guard let apiKey = KeychainManager.getAPIKey(.elevenLabs) else {
+    /// POST `https://api.sarvam.ai/text-to-speech` — response `audios` are base64 WAV per [Sarvam REST docs](https://docs.sarvam.ai/api-reference-docs/text-to-speech/convert).
+    private func speakWithSarvam(_ text: String) {
+        guard let apiKey = KeychainManager.getAPIKey(.sarvam), !apiKey.isEmpty else {
+            speakWithSystem(text)
+            return
+        }
+
+        let speaker = AppSettings.shared.sarvamVoice.rawValue
+        guard let url = URL(string: "https://api.sarvam.ai/text-to-speech") else {
             speakWithSystem(text)
             return
         }
 
         DispatchQueue.main.async { self.isSpeaking = true }
 
-        let voiceID = "21m00Tcm4TlvDq8ikWAM"
-        let url = URL(string: "https://api.elevenlabs.io/v1/text-to-speech/\(voiceID)")!
-
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
-        request.setValue("application/json", forHTTPHeaderField: "content-type")
-        request.setValue("audio/mpeg", forHTTPHeaderField: "accept")
+        request.setValue(apiKey, forHTTPHeaderField: "api-subscription-key")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = [
             "text": text,
-            "model_id": "eleven_flash_v2_5",
-            "voice_settings": [
-                "stability": 0.5,
-                "similarity_boost": 0.75
-            ]
+            "target_language_code": "en-IN",
+            "model": "bulbul:v3",
+            "speaker": speaker
         ]
-
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            guard let self, let data, error == nil,
-                  (response as? HTTPURLResponse)?.statusCode == 200 else {
+            guard let self else { return }
+
+            func fallback() {
                 DispatchQueue.main.async { [weak self] in
                     self?.speakWithSystem(text)
                 }
+            }
+
+            if error != nil {
+                fallback()
+                return
+            }
+            guard let data,
+                  let http = response as? HTTPURLResponse,
+                  http.statusCode == 200 else {
+                fallback()
                 return
             }
 
+            let decoded: SarvamTTSResponse
             do {
-                self.audioPlayer = try AVAudioPlayer(data: data)
-                self.audioPlayer?.delegate = self
-                self.audioPlayer?.play()
+                decoded = try JSONDecoder().decode(SarvamTTSResponse.self, from: data)
             } catch {
-                DispatchQueue.main.async { [weak self] in
-                    self?.speakWithSystem(text)
+                fallback()
+                return
+            }
+
+            guard let b64 = decoded.audios.first,
+                  let wavData = Data(base64Encoded: b64),
+                  !wavData.isEmpty else {
+                fallback()
+                return
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                do {
+                    self.audioPlayer = try AVAudioPlayer(data: wavData)
+                    self.audioPlayer?.delegate = self
+                    self.audioPlayer?.prepareToPlay()
+                    self.audioPlayer?.play()
+                } catch {
+                    self.speakWithSystem(text)
                 }
             }
         }.resume()
     }
+}
+
+private struct SarvamTTSResponse: Decodable {
+    let audios: [String]
 }
 
 extension TTSService: AVSpeechSynthesizerDelegate {
