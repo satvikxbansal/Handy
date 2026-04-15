@@ -114,11 +114,8 @@ private struct ResponseBubbleSizePreferenceKey: PreferenceKey {
 
 /// How long the buddy stays at the target after a successful POINT before flying back.
 private enum PointDwellTiming {
-    /// Voice flow (no blue label): buddy holds at element before return flight.
-    static let atTargetVoiceSeconds: TimeInterval = 2.0
-    /// After the blue pointer label finishes streaming: hold before fade, then `fadeTailSeconds` before flight.
-    static let afterLabelStreamingSeconds: TimeInterval = 4.0
-    static let fadeTailSeconds: TimeInterval = 0.5
+    /// Wall-clock time from entering `pointingAtTarget` until the return flight begins (inclusive max 5s).
+    static let returnFlightDelayRange: ClosedRange<TimeInterval> = 3.0...5.0
 }
 
 // MARK: - Companion Cursor View
@@ -144,6 +141,7 @@ struct CompanionCursorView: View {
     @State private var cursorPositionWhenNavigationStarted: CGPoint = .zero
     @State private var navigationAnimationTimer: Timer?
     @State private var isReturningToCursor: Bool = false
+    @State private var pointingReturnWorkItem: DispatchWorkItem?
 
     // MARK: - Voice Overlay Bubbles State
 
@@ -370,6 +368,8 @@ struct CompanionCursorView: View {
         .onDisappear {
             timer?.invalidate()
             navigationAnimationTimer?.invalidate()
+            pointingReturnWorkItem?.cancel()
+            pointingReturnWorkItem = nil
         }
         .onChange(of: manager.detectedElementScreenLocation) { newLocation in
             guard let screenLocation = newLocation else { return }
@@ -466,6 +466,9 @@ struct CompanionCursorView: View {
     // MARK: - Element Navigation
 
     private func startNavigatingToElement(screenLocation: CGPoint) {
+        pointingReturnWorkItem?.cancel()
+        pointingReturnWorkItem = nil
+
         let targetInSwiftUI = convertScreenPointToSwiftUI(screenLocation)
         let offsetTarget = CGPoint(x: targetInSwiftUI.x + 8, y: targetInSwiftUI.y + 12)
         let clampedTarget = CGPoint(
@@ -554,29 +557,33 @@ struct CompanionCursorView: View {
         navigationBubbleSize = .zero
         navigationBubbleScale = 0.5
 
-        // Voice replies use the green bubble for text — skip the blue label and return sooner.
+        pointingReturnWorkItem?.cancel()
+        let dwell = Double.random(in: PointDwellTiming.returnFlightDelayRange)
+        let returnWork = DispatchWorkItem {
+            guard self.buddyNavigationMode == .pointingAtTarget else { return }
+            self.startFlyingBackToCursor()
+        }
+        pointingReturnWorkItem = returnWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + dwell, execute: returnWork)
+
+        // Voice replies use the green bubble for text — skip the blue label; dwell matches the timed return above.
         if manager.suppressCompanionNavigationLabelBubble {
             navigationBubbleOpacity = 0.0
             navigationBubbleScale = 1.0
-            DispatchQueue.main.asyncAfter(deadline: .now() + PointDwellTiming.atTargetVoiceSeconds) {
-                guard self.buddyNavigationMode == .pointingAtTarget else { return }
-                self.startFlyingBackToCursor()
-            }
             return
         }
 
-        let pointerPhrase = manager.detectedElementBubbleText
-            ?? navigationPointerPhrases.randomElement()
-            ?? "right here!"
+        let trimmedLabel = manager.detectedElementBubbleText?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pointerPhrase: String
+        if let trimmedLabel, !trimmedLabel.isEmpty {
+            pointerPhrase = trimmedLabel
+        } else {
+            pointerPhrase = navigationPointerPhrases.randomElement() ?? "right here!"
+        }
 
         streamNavigationBubbleCharacter(phrase: pointerPhrase, characterIndex: 0) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + PointDwellTiming.afterLabelStreamingSeconds) {
-                guard self.buddyNavigationMode == .pointingAtTarget else { return }
+            withAnimation(.easeOut(duration: 0.3)) {
                 self.navigationBubbleOpacity = 0.0
-                DispatchQueue.main.asyncAfter(deadline: .now() + PointDwellTiming.fadeTailSeconds) {
-                    guard self.buddyNavigationMode == .pointingAtTarget else { return }
-                    self.startFlyingBackToCursor()
-                }
             }
         }
     }
@@ -610,6 +617,9 @@ struct CompanionCursorView: View {
     }
 
     private func startFlyingBackToCursor() {
+        pointingReturnWorkItem?.cancel()
+        pointingReturnWorkItem = nil
+
         let mouseLocation = NSEvent.mouseLocation
         let cursorInSwiftUI = convertScreenPointToSwiftUI(mouseLocation)
         let cursorWithOffset = CGPoint(x: cursorInSwiftUI.x + 35, y: cursorInSwiftUI.y + 25)
@@ -624,6 +634,8 @@ struct CompanionCursorView: View {
     }
 
     private func cancelNavigationAndResumeFollowing() {
+        pointingReturnWorkItem?.cancel()
+        pointingReturnWorkItem = nil
         navigationAnimationTimer?.invalidate()
         navigationAnimationTimer = nil
         navigationBubbleText = ""
@@ -634,6 +646,8 @@ struct CompanionCursorView: View {
     }
 
     private func finishNavigationAndResumeFollowing() {
+        pointingReturnWorkItem?.cancel()
+        pointingReturnWorkItem = nil
         navigationAnimationTimer?.invalidate()
         navigationAnimationTimer = nil
         buddyNavigationMode = .followingCursor
