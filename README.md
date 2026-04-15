@@ -18,9 +18,17 @@ This happens automatically before messages are sent (and when you open the chat 
 
 Plain English: **one brain, many notebooks**—and it flips to the right notebook when you change what you are working in.
 
+### Layered answers (pointer, bubbles, and the full chat)
+
+Handy does not want you stuck listening to a wall of text. When you use **voice**, the experience is split on purpose: a **short line** you hear and see near the **companion cursor**, optional **fly-to pointing** at a control, and the **longer story**—shortcuts, alternatives, extra context—in the **chat thread** where you can read at your own pace. Same spirit when you type: the buddy can still **point** while the message in the panel goes deeper.
+
+Instructions are **macOS-first** so you are not getting Windows-style shortcuts by mistake. If something really needs paragraphs instead of “click here first,” the quick version might simply nudge you to **open chat** for the full walkthrough—the detail still shows up in the thread.
+
 ### Floating widget (optional quick access)
 
-If you turn it on in **Settings → Trigger**, a **small pill** stays on screen while chat is **closed**. **Tap** it to open the same chat you would get with **Shift+Space+O**—same tool context and history, not a blank thread. **Click and drag** anywhere on the pill to move it; the blue companion cursor hides while you drag so it does not sit on top of the widget. The widget **hides while chat is open** and comes back when you close chat.
+If you turn it on in **Settings → Trigger**, a **small pill** stays on screen while chat is **closed**. **Tap** it to open the same chat you would get with **Shift+Space+O**—same tool context and history, not a blank thread. **Click and drag** anywhere on the pill to move it; the blue companion cursor hides while you drag so it does not sit on top of the widget.
+
+The pill is meant to feel like part of the same world as the buddy: **blue waveform** when you are listening, a **spinner** while Handy is thinking, hand when idle, and a **thin amber outline** that turns white on hover—without a dull rectangular backdrop behind the rounded shape. The widget **hides while chat is open** and comes back when you close chat.
 
 It is optional on purpose: some people only want the menu bar and shortcuts. Others like a visible “open Handy” button that does not get in the way.
 
@@ -49,10 +57,10 @@ Provider keys (Claude for the main model, and optional keys for speech or voice 
 ## Features (quick list)
 
 - **Screen-aware AI** — Captures your displays and sends them to Claude so help matches what you see.
-- **Visual pointing** — Responses can include `[POINT:x,y:label]` so an overlay can **animate toward** a control or region.
-- **Voice** — Push-to-talk; default Apple speech (on-device when available); optional OpenAI or AssemblyAI for transcription; system or ElevenLabs for speech output.
-- **Floating chat** — Dark, draggable panel with streaming replies and scrollable history.
-- **Floating widget** (optional) — Tiny on-screen pill to open chat with one tap; draggable; toggle in Settings → Trigger.
+- **Visual pointing** — Responses can include `[POINT:x,y:label]` so the companion cursor can **fly toward** a control. The chat message can still carry **extra detail** (shortcuts, other ways to do the same thing) while the pointer favors the clearest on-screen path.
+- **Voice** — Push-to-talk; default Apple speech (on-device when available); optional OpenAI or AssemblyAI for transcription; system or ElevenLabs for speech output. Spoken output stays **short**; the **full write-up** lands in chat so you can explore more when you want.
+- **Floating chat** — Dark, draggable panel with streaming replies and scrollable history. Hover the **status dot** next to the **Handy** title and a little **friendly line** appears (a rotating phrase—think “office hours” energy).
+- **Floating widget** (optional) — Tiny on-screen pill to open chat with one tap; draggable; states line up with the buddy; toggle in Settings → Trigger.
 - **Tutor mode** — Optional mode that watches when you are idle and can nudge you through an app (uses API tokens).
 - **Multi-monitor** — Screenshots all displays and maps coordinates sensibly.
 
@@ -168,7 +176,8 @@ Handy/
 ├── FloatingAccessWidget/
 │   ├── FloatingAccessWidgetController.swift   # Small optional panel
 │   ├── FloatingAccessWidgetView.swift           # SwiftUI chrome
-│   └── FloatingAccessoryInteractionView.swift   # Drag vs tap, hover
+│   ├── FloatingAccessoryInteractionView.swift   # Drag vs tap, hover
+│   └── TranslucentFloatingChromeViews.swift     # Transparent hosting shell for the pill
 └── Utilities/
     ├── KeychainManager.swift
     └── PointParser.swift
@@ -182,7 +191,7 @@ Handy/
 2. **Tool resolution** runs: if the focused app changed, Handy **switches tool context** and **loads that tool’s history**. For browsers, it prefers **URL / site identity** over the raw browser name.  
 3. **Screenshots** of all displays are taken.  
 4. **Claude** receives the images, your message, system instructions, and **recent turns for this tool only**.  
-5. **Streaming text** fills the chat; optional **pointing** and **TTS** run on the reply.  
+5. **Streaming text** fills the chat; optional **pointing** and (for voice) **short TTS** run on the reply, while the chat keeps the **full written answer**.  
 6. The exchange is **appended to local history** for **that tool**.
 
 ---
