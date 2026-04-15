@@ -7,20 +7,18 @@ struct FloatingAccessWidgetView: View {
 
     var body: some View {
         ZStack {
-            // Fill + drop shadow only on the fill so the border stays a crisp 1pt hairline (no stroke in the shadow layer).
+            // No SwiftUI `.shadow` here: it expands into a rectangular layer that often reads as a dull grey box
+            // on light backgrounds behind a transparent `NSPanel`. Depth comes from the amber stroke + dark fill.
             RoundedRectangle(cornerRadius: FloatingAccessWidgetMetrics.cornerRadius, style: .continuous)
                 .fill(DS.Colors.surface)
-                .shadow(color: Color.black.opacity(0.28), radius: 8, x: 0, y: 3)
 
-            // `stroke` is centered on the path; half sits outside the rect and clips unevenly at the window edge,
-            // which often reads as thicker verticals. `strokeBorder` draws inside the shape for uniform weight.
+            // `strokeBorder` draws inside the shape for uniform weight.
             RoundedRectangle(cornerRadius: FloatingAccessWidgetMetrics.cornerRadius, style: .continuous)
                 .strokeBorder(widgetOutlineColor, lineWidth: FloatingAccessWidgetMetrics.outlineWidth)
 
             centerContent
                 .allowsHitTesting(false)
         }
-        .compositingGroup()
         .frame(width: FloatingAccessWidgetMetrics.width, height: FloatingAccessWidgetMetrics.height)
         .background(Color.clear)
         .accessibilityLabel("Handy — open chat or drag to move")
