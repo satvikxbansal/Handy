@@ -77,6 +77,9 @@ enum KeychainManager {
         case openAI = "handy_openai_api_key"
         case assemblyAI = "handy_assemblyai_api_key"
         case sarvam = "handy_sarvam_api_key"
+        case braveSearch = "handy_brave_search_api_key"
+        case jinaReader = "handy_jina_reader_api_key"
+        case github = "handy_github_api_key"
     }
 
     static func saveAPIKey(_ type: APIKeyType, value: String) throws {

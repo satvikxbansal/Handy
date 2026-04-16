@@ -64,12 +64,19 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(showFloatingAccessWidget, forKey: Keys.showFloatingAccessWidget) }
     }
 
+    /// When true, all queries are routed through the web search pipeline (Brave + Jina + GitHub).
+    /// Claude receives tool definitions and decides when to search. Requires at least a Brave API key.
+    @Published var webSearchEnabled: Bool {
+        didSet { UserDefaults.standard.set(webSearchEnabled, forKey: Keys.webSearchEnabled) }
+    }
+
     private enum Keys {
         static let assistantMode = "handy_assistantMode"
         static let sttProvider = "handy_sttProvider"
         static let ttsProvider = "handy_ttsProvider"
         static let sarvamVoice = "handy_sarvamVoice"
         static let showFloatingAccessWidget = "handy_showFloatingAccessWidget"
+        static let webSearchEnabled = "handy_webSearchEnabled"
     }
 
     private init() {
@@ -93,5 +100,6 @@ final class AppSettings: ObservableObject {
         self.sarvamVoice = SarvamVoice(rawValue: voiceRaw) ?? .ritu
 
         self.showFloatingAccessWidget = UserDefaults.standard.object(forKey: Keys.showFloatingAccessWidget) as? Bool ?? false
+        self.webSearchEnabled = UserDefaults.standard.object(forKey: Keys.webSearchEnabled) as? Bool ?? false
     }
 }

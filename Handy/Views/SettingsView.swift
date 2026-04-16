@@ -8,10 +8,16 @@ struct SettingsView: View {
     @State private var openAIKeyInput = ""
     @State private var assemblyAIKeyInput = ""
     @State private var sarvamKeyInput = ""
+    @State private var braveKeyInput = ""
+    @State private var jinaKeyInput = ""
+    @State private var githubKeyInput = ""
     @State private var showClaudeKey = false
     @State private var showOpenAIKey = false
     @State private var showAssemblyAIKey = false
     @State private var showSarvamKey = false
+    @State private var showBraveKey = false
+    @State private var showJinaKey = false
+    @State private var showGithubKey = false
     @State private var keySaveStatus: String?
     @State private var selectedSection: SettingsSection = .brain
 
@@ -115,14 +121,14 @@ struct SettingsView: View {
                 }
             }
 
-            if settings.sttProvider == .openAI || settings.ttsProvider == .system {
+            if settings.sttProvider == .openAI {
                 apiKeyField(
                     title: "OpenAI API Key",
                     placeholder: "sk-...",
                     text: $openAIKeyInput,
                     isRevealed: $showOpenAIKey,
                     keyType: .openAI,
-                    isRequired: settings.sttProvider == .openAI
+                    isRequired: true
                 )
             }
 
@@ -157,6 +163,10 @@ struct SettingsView: View {
                 }
             }
 
+            Divider().background(DS.Colors.borderSubtle)
+
+            webSearchSection
+
             if let status = keySaveStatus {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
@@ -169,6 +179,109 @@ struct SettingsView: View {
                 .transition(.opacity)
             }
         }
+    }
+
+    // MARK: - Web Search Section
+
+    private var webSearchSection: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "globe.americas.fill")
+                    .font(.system(size: 13))
+                    .foregroundColor(DS.Colors.webSearchAccent)
+                Text("Web Search")
+                    .font(DS.Typography.titleSmall)
+                    .foregroundColor(DS.Colors.textPrimary)
+                Spacer()
+
+                Toggle("", isOn: $settings.webSearchEnabled)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .tint(DS.Colors.webSearchAccent)
+                    .scaleEffect(0.8)
+            }
+
+            if settings.webSearchEnabled {
+                webSearchInfoNote
+
+                apiKeyField(
+                    title: "Brave Search API Key",
+                    placeholder: "BSA...",
+                    text: $braveKeyInput,
+                    isRevealed: $showBraveKey,
+                    keyType: .braveSearch,
+                    isRequired: true
+                )
+
+                apiKeyField(
+                    title: "Jina Reader API Key",
+                    placeholder: "jina_...",
+                    text: $jinaKeyInput,
+                    isRevealed: $showJinaKey,
+                    keyType: .jinaReader,
+                    isRequired: false
+                )
+
+                apiKeyField(
+                    title: "GitHub Token",
+                    placeholder: "ghp_...",
+                    text: $githubKeyInput,
+                    isRevealed: $showGithubKey,
+                    keyType: .github,
+                    isRequired: false
+                )
+
+                webSearchCapabilitiesNote
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: settings.webSearchEnabled)
+    }
+
+    private var webSearchInfoNote: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(DS.Colors.webSearchAccent)
+                    .font(.system(size: 12))
+                    .padding(.top, 1)
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text("when search mode is on, claude can look things up on the web during your conversation. some queries may take slightly longer (1-3s extra) when a search is triggered, but results will be more accurate and up-to-date.")
+                        .font(DS.Typography.caption)
+                        .foregroundColor(DS.Colors.textTertiary)
+                    Text("your existing flows (navigation, screen reading, voice) are not affected — web search is a transparent add-on layer.")
+                        .font(DS.Typography.caption)
+                        .foregroundColor(DS.Colors.textTertiary)
+                }
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.webSearchAccentSubtle)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+    }
+
+    private var webSearchCapabilitiesNote: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: "sparkle")
+                    .foregroundColor(DS.Colors.textTertiary)
+                    .font(.system(size: 11))
+                    .padding(.top, 1)
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text("brave search — web queries, docs, latest versions")
+                        .font(DS.Typography.caption)
+                        .foregroundColor(DS.Colors.textTertiary)
+                    Text("jina reader — reads full web pages for deep context (optional, free tier)")
+                        .font(DS.Typography.caption)
+                        .foregroundColor(DS.Colors.textTertiary)
+                    Text("github search — finds repos, packages, and libraries (optional, free)")
+                        .font(DS.Typography.caption)
+                        .foregroundColor(DS.Colors.textTertiary)
+                }
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
     }
 
     // MARK: - Mode Section
@@ -464,6 +577,9 @@ struct SettingsView: View {
         openAIKeyInput = KeychainManager.getAPIKey(.openAI) ?? ""
         assemblyAIKeyInput = KeychainManager.getAPIKey(.assemblyAI) ?? ""
         sarvamKeyInput = KeychainManager.getAPIKey(.sarvam) ?? ""
+        braveKeyInput = KeychainManager.getAPIKey(.braveSearch) ?? ""
+        jinaKeyInput = KeychainManager.getAPIKey(.jinaReader) ?? ""
+        githubKeyInput = KeychainManager.getAPIKey(.github) ?? ""
     }
 
     private func saveKey(_ value: String, type: KeychainManager.APIKeyType) {

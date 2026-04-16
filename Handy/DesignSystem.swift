@@ -35,6 +35,10 @@ enum DS {
 
         /// Subtle ring around the floating accessory widget (idle); turns white on hover via the view layer.
         static let floatingWidgetOutline = Color(hex: "F59E0B").opacity(0.55)
+
+        /// Web search feature accent (teal) — used for the search toggle and section header.
+        static let webSearchAccent = Color(hex: "14B8A6")
+        static let webSearchAccentSubtle = Color(hex: "0F3D38")
     }
 
     // MARK: - Typography (SF Pro - system default)

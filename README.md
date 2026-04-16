@@ -1,10 +1,12 @@
 # Handy ✋🏻
 
+> **Coming soon:** Web Search mode — let Claude look things up on the web mid-conversation when your question needs fresh or real-time info.
+
 Handy is a native macOS assistant that lives in your menu bar. It looks at your screen, listens when you want it to, and talks back—so you can ask “what do I click?” or “what does this mean?” without pasting screenshots into a separate chat window.
 
 You can open chat with a keyboard shortcut, the menu bar, or an **optional tiny floating widget** on the edge of the screen. The widget is there if you want a quick tap target without remembering shortcuts.
 
-The deeper idea is **context that matches how you actually work**. Most assistants forget that you were just in Xcode and are now in Slack, or that “Chrome” is not the app you care about—the **website** is. Handy tracks the **focused app and site**, keeps **separate conversation memory per place**, and only sends the **recent, relevant thread** to the model along with a fresh view of your displays. Your secrets stay **on your Mac** in the system Keychain; your chat history stays **local files** on disk—not in someone else’s cloud by default.
+The deeper idea is **context that matches how you actually work**. Most assistants forget that you were just in Xcode and are now in Slack, or that “Chrome” is not the app you care about—the **website** is. Handy tracks the **focused app and site**, keeps **separate conversation memory per place**, and only sends the **recent, relevant thread** to the model along with a fresh view of your displays. Your secrets stay **on your Mac** in the system Keychain; your chat history stays **local files** on disk—not in someone else’s cloud by default. When turned on, **web search** lets the model reach out to the internet for answers that need fresh data—without slowing down the questions that don’t.
 
 ---
 
@@ -61,6 +63,7 @@ Provider keys (Claude for the main model, and optional keys for speech or voice 
 - **Voice** — Push-to-talk; default Apple speech (on-device when available); optional OpenAI or AssemblyAI for transcription; system or ElevenLabs for speech output. Spoken output stays **short**; the **full write-up** lands in chat so you can explore more when you want.
 - **Floating chat** — Dark, draggable panel with streaming replies and scrollable history. Hover the **status dot** next to the **Handy** title and a little **friendly line** appears (a rotating phrase—think “office hours” energy).
 - **Floating widget** (optional) — Tiny on-screen pill to open chat with one tap; draggable; states line up with the buddy; toggle in Settings → Trigger.
+- **Web search** (optional) — When enabled, Claude can search the web, read full pages, and find GitHub repos mid-conversation. Only triggers when the question actually needs it; zero overhead otherwise.
 - **Tutor mode** — Optional mode that watches when you are idle and can nudge you through an app (uses API tokens).
 - **Multi-monitor** — Screenshots all displays and maps coordinates sensibly.
 
@@ -142,6 +145,9 @@ open "$HOME/Library/Developer/Xcode/DerivedData"/Handy-*/Build/Products/Debug/Ha
 | **OpenAI** | Optional STT | No |
 | **AssemblyAI** | Optional STT | No |
 | **ElevenLabs** | Optional TTS | No |
+| **Brave Search** | Web search (when enabled) | No |
+| **Jina Reader** | Full page reading (when search enabled) | No |
+| **GitHub** | Repo/package search (when search enabled) | No |
 
 Keys are **only** in Keychain from the app’s perspective—not duplicated in repo files.
 
@@ -193,6 +199,63 @@ Handy/
 4. **Claude** receives the images, your message, system instructions, and **recent turns for this tool only**.  
 5. **Streaming text** fills the chat; optional **pointing** and (for voice) **short TTS** run on the reply, while the chat keeps the **full written answer**.  
 6. The exchange is **appended to local history** for **that tool**.
+
+---
+
+## Web Search (optional, add-on layer)
+
+Most of what you ask Handy—“where is the export button,” “what does this error mean”—can be answered from the screenshot and the model’s own knowledge. But sometimes you need something the model can’t know from memory: the latest version of a framework, whether a Swift package exists for a particular task, or how to fix an error code that only shows up on Stack Overflow. That’s what web search mode is for.
+
+### How it works
+
+You flip a toggle in **Settings → Brain → Web Search**. That’s it. Everything else stays the same—your voice flow, your navigation pointing, your screen capture—none of that changes. Web search is a **transparent layer on top**, not a replacement for anything.
+
+When search mode is on, Handy sends Claude three **tool definitions** alongside your normal request: `web_search`, `fetch_page`, and `github_search`. Claude reads your question and **decides on its own** whether it needs to look something up. If it doesn’t, the answer streams back at the same speed as before—zero overhead. If it does, you’ll see a brief “Searching the web…” pause (typically 1–3 seconds), and then a response grounded in real, current information.
+
+### How Claude decides
+
+The tool descriptions tell Claude **when** to search, not just what the tools do. The rules are baked into the tool definition itself:
+
+**Search when:**
+- The question is about **latest versions, recent releases, or anything after early 2025**
+- The user wants to **find a package, library, SDK, or repo**
+- It’s about **installation or setup** (“how to install,” “pip install,” “SPM package”)
+- There’s an **error code or message** with no obvious fix
+- The question is about **compatibility** (“does X support Y”)
+- The user asks about **specific API usage or documentation**
+- It involves **changelogs, release notes, or breaking changes**
+
+**Don’t search when:**
+- The question is about **UI navigation** (“where is this button”)—that’s what the screenshot is for
+- The user wants a **code review** of something visible on screen
+- It’s a **general concept** the model knows well (“what is a closure”)
+- The answer is **clearly visible** in the screenshot already
+
+This is **Pattern A** from the architecture: Claude’s own judgment, guided by a well-written tool description. No separate classifier, no extra model call, no keyword regex. Claude is already good at knowing what it knows and what it doesn’t.
+
+### The three tools
+
+| Tool | Backed by | What it does | Cost |
+|------|-----------|-------------|------|
+| **web_search** | Brave Search API | Searches the web and returns top results with titles, snippets, and URLs | ~$0.005/query |
+| **fetch_page** | Jina Reader API | Reads the full content of a web page and returns clean markdown | Free tier (~200 req/day) |
+| **github_search** | GitHub REST API | Finds repositories by query and language, returns stars, descriptions, last update | Free (10 req/min unauth, 30 with token) |
+
+**Why these three?** Brave has its own independent search index (no Google/Bing dependency), scores well in agentic benchmarks, and is fast (~600ms). Jina and GitHub are **free APIs**—Jina’s free tier gives you about 200 page reads per day, and GitHub’s search endpoint is free even without a token. The total incremental cost for a typical user is around **$2–5/month**.
+
+### API keys
+
+All three keys are stored in the **macOS Keychain**, same as your Claude key. You enter them once in Settings and they persist across launches—no re-entry, no plain-text files on disk.
+
+| Key | Required for search? | Where to get it |
+|-----|---------------------|----------------|
+| **Brave Search** | Yes | [brave.com/search/api](https://brave.com/search/api/) |
+| **Jina Reader** | No (optional, for full page reading) | [jina.ai](https://jina.ai/) |
+| **GitHub Token** | No (optional, raises rate limit) | [github.com/settings/tokens](https://github.com/settings/tokens) |
+
+### What doesn’t change
+
+This is important: **web search does not touch the core flows**. Screen capture, voice transcription, navigation pointing, companion cursor, tool context switching, chat history—all of that runs exactly the same whether search mode is on or off. The toggle gates a single code path: whether Claude gets tool definitions in the API call. When it’s off, the request body is identical to what it was before this feature existed.
 
 ---
 
