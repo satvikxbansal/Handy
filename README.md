@@ -208,7 +208,7 @@ Most of what you ask Handy—“where is the export button,” “what does this
 
 ### How it works
 
-You flip a toggle in **Settings → Brain → Web Search**. That’s it. Everything else stays the same—your voice flow, your navigation pointing, your screen capture—none of that changes. Web search is a **transparent layer on top**, not a replacement for anything.
+You flip a toggle in **Settings → Brain → Web Search**. That’s it. Everything else stays the same.
 
 When search mode is on, Handy sends Claude three **tool definitions** alongside your normal request: `web_search`, `fetch_page`, and `github_search`. Claude reads your question and **decides on its own** whether it needs to look something up. If it doesn’t, the answer streams back at the same speed as before—zero overhead. If it does, you’ll see a brief “Searching the web…” pause (typically 1–3 seconds), and then a response grounded in real, current information.
 
@@ -231,8 +231,6 @@ The tool descriptions tell Claude **when** to search, not just what the tools do
 - It’s a **general concept** the model knows well (“what is a closure”)
 - The answer is **clearly visible** in the screenshot already
 
-This is **Pattern A** from the architecture: Claude’s own judgment, guided by a well-written tool description. No separate classifier, no extra model call, no keyword regex. Claude is already good at knowing what it knows and what it doesn’t.
-
 ### The three tools
 
 | Tool | Backed by | What it does | Cost |
@@ -252,10 +250,6 @@ All three keys are stored in the **macOS Keychain**, same as your Claude key. Yo
 | **Brave Search** | Yes | [brave.com/search/api](https://brave.com/search/api/) |
 | **Jina Reader** | No (optional, for full page reading) | [jina.ai](https://jina.ai/) |
 | **GitHub Token** | No (optional, raises rate limit) | [github.com/settings/tokens](https://github.com/settings/tokens) |
-
-### What doesn’t change
-
-This is important: **web search does not touch the core flows**. Screen capture, voice transcription, navigation pointing, companion cursor, tool context switching, chat history—all of that runs exactly the same whether search mode is on or off. The toggle gates a single code path: whether Claude gets tool definitions in the API call. When it’s off, the request body is identical to what it was before this feature existed.
 
 ---
 
