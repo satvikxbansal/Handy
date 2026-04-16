@@ -1,6 +1,6 @@
 # Handy ✋🏻
 
-> **Coming soon:** Web Search mode — let Claude look things up on the web mid-conversation when your question needs fresh or real-time info.
+> **Coming soon:** Web Search mode — let Claude look things up on the web mid-conversation _only when it decides_ that your question needs fresh or real-time info.
 
 Handy is a native macOS assistant that lives in your menu bar. It looks at your screen, listens when you want it to, and talks back—so you can ask “what do I click?” or “what does this mean?” without pasting screenshots into a separate chat window.
 
