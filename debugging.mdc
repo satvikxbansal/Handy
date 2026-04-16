@@ -1,0 +1,32 @@
+---
+description: Debugging protocol for Handy development
+globs: ["**/*.swift"]
+alwaysApply: true
+---
+
+# Debugging Protocol
+
+Every time you fix a build error, runtime crash, or resolve a bug, append a structured entry to `DEBUG_LOG.md` at the project root BEFORE telling the user the fix is complete.
+
+## Entry Template
+
+```
+### DL-XXX — [Short Title]
+
+| Field | Value |
+|-------|-------|
+| **Date** | YYYY-MM-DD |
+| **Severity** | Build Error / Runtime Crash / Logic Bug / Warning |
+| **File(s)** | `path/to/file.swift` |
+| **Symptom** | What the user saw or what failed |
+| **Root Cause** | Why it happened |
+| **Fix** | What was changed |
+| **Prevention Rule** | How to avoid this in the future |
+```
+
+## Rules
+
+1. **Sequence**: Number entries DL-001, DL-002, etc.
+2. **Never skip**: Even trivial fixes get logged.
+3. **Before writing code**: Read DEBUG_LOG.md and check if any Prevention Rules apply.
+4. **Append only**: Never delete or modify existing entries.
