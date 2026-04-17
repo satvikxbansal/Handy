@@ -880,8 +880,10 @@ final class HandyManager: NSObject, ObservableObject {
                     overlayResponseText = PointParser.clampVoiceSpokenForOverlay(raw)
                 }
 
-                // Only speak for push-to-talk replies — typed chat uses the full `chatSystemPrompt` and must not read paragraphs aloud.
                 if fromVoice {
+                    let ttsPreview = textForTTS.prefix(150)
+                    let hasTags = finalText.contains("[SPOKEN]")
+                    print("🔊 TTS — hasSPOKEN=\(hasTags), len=\(textForTTS.count), preview: \"\(ttsPreview)\"")
                     ttsService.speak(textForTTS)
                 }
 

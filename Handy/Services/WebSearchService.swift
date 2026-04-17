@@ -87,8 +87,18 @@ final class WebSearchService {
             throw WebSearchError.decodingError
         }
         guard httpResponse.statusCode == 200 else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw WebSearchError.httpError(httpResponse.statusCode, body)
+            let rawBody = String(data: data, encoding: .utf8) ?? ""
+            // Extract a short, clean error message — never pass raw HTML/JSON to Claude
+            let cleanMsg: String
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                cleanMsg = "Authentication failed — the Brave Search API key is invalid or expired. Please update it in Settings > Brain > Web Search."
+            } else if httpResponse.statusCode == 429 {
+                cleanMsg = "Rate limit exceeded — too many search requests. Please wait a moment."
+            } else {
+                cleanMsg = "HTTP \(httpResponse.statusCode)"
+            }
+            print("⚠️ Brave Search API error \(httpResponse.statusCode): \(rawBody.prefix(200))")
+            throw WebSearchError.httpError(httpResponse.statusCode, cleanMsg)
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -129,8 +139,12 @@ final class WebSearchService {
             throw WebSearchError.decodingError
         }
         guard httpResponse.statusCode == 200 else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw WebSearchError.httpError(httpResponse.statusCode, body)
+            let rawBody = String(data: data, encoding: .utf8) ?? ""
+            print("⚠️ Jina Reader API error \(httpResponse.statusCode): \(rawBody.prefix(200))")
+            let cleanMsg = httpResponse.statusCode == 429
+                ? "Rate limit exceeded for page reading. Please wait a moment."
+                : "Failed to read page (HTTP \(httpResponse.statusCode))."
+            throw WebSearchError.httpError(httpResponse.statusCode, cleanMsg)
         }
 
         let fullText = String(data: data, encoding: .utf8) ?? ""
@@ -179,8 +193,12 @@ final class WebSearchService {
             throw WebSearchError.decodingError
         }
         guard httpResponse.statusCode == 200 else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw WebSearchError.httpError(httpResponse.statusCode, body)
+            let rawBody = String(data: data, encoding: .utf8) ?? ""
+            print("⚠️ GitHub API error \(httpResponse.statusCode): \(rawBody.prefix(200))")
+            let cleanMsg = httpResponse.statusCode == 403
+                ? "GitHub API rate limit reached. Add a GitHub token in Settings to increase limits."
+                : "GitHub search failed (HTTP \(httpResponse.statusCode))."
+            throw WebSearchError.httpError(httpResponse.statusCode, cleanMsg)
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
