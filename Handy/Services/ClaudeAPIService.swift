@@ -588,14 +588,12 @@ final class ClaudeAPIService {
 
             Task {
                 do {
-                    // Multi-turn tool loop: Claude may chain tools (e.g. github_search → fetch_page → answer).
-                    // Each round: stream a pass, if Claude calls a tool → execute it, append to messages, repeat.
-                    // Stops when Claude produces end_turn (no tool_use) or after maxRounds to prevent infinite loops.
-                    let maxRounds = 5
+                    let maxToolCalls = 5
+                    var toolCallsUsed = 0
                     var currentMessages = messages
                     var currentJsonData = jsonData
 
-                    for round in 0..<maxRounds {
+                    while true {
                         let passResult = try await self.executeStreamingPass(
                             jsonData: currentJsonData,
                             apiKey: apiKey,
@@ -606,11 +604,12 @@ final class ClaudeAPIService {
                         )
 
                         guard let toolUse = passResult.toolUse else {
-                            print("🌐 Tool loop complete after \(round + 1) round(s) — Claude finished with text")
+                            print("🌐 Tool loop complete after \(toolCallsUsed) tool call(s) — Claude finished with text")
                             break
                         }
 
-                        print("🌐 Round \(round + 1): Claude requested tool: \(toolUse.name) with input: \(toolUse.input)")
+                        toolCallsUsed += 1
+                        print("🌐 Tool call \(toolCallsUsed)/\(maxToolCalls): \(toolUse.name) with input: \(toolUse.input)")
                         await MainActor.run { onToolUse(toolUse.name) }
 
                         let toolResultContent: String
@@ -635,6 +634,32 @@ final class ClaudeAPIService {
                                 ]
                             ]
                         ])
+
+                        if toolCallsUsed >= maxToolCalls {
+                            // Hit the limit. One final pass WITHOUT tools so Claude
+                            // MUST synthesize an answer from everything gathered so far.
+                            print("🌐 Tool call limit reached (\(maxToolCalls)). Final synthesis pass (no tools).")
+                            let finalBody: [String: Any] = [
+                                "model": modelStr,
+                                "max_tokens": maxTok,
+                                "system": systemPrompt,
+                                "messages": currentMessages,
+                                "stream": true
+                            ]
+                            guard let finalJsonData = try? JSONSerialization.data(withJSONObject: finalBody) else {
+                                continuation.finish(throwing: ClaudeAPIError.invalidResponse)
+                                return
+                            }
+                            let _ = try await self.executeStreamingPass(
+                                jsonData: finalJsonData,
+                                apiKey: apiKey,
+                                baseURL: baseURLStr,
+                                apiVersion: apiVersionStr,
+                                session: sharedSession,
+                                continuation: continuation
+                            )
+                            break
+                        }
 
                         let nextBody: [String: Any] = [
                             "model": modelStr,

@@ -790,11 +790,6 @@ final class HandyManager: NSObject, ObservableObject {
                     guard !Task.isCancelled else { return }
                     fullResponse += chunk
                     streamingText = introPrefix + fullResponse
-                    // Clear search status only once we have substantial text (the final answer),
-                    // not during Claude's brief "let me check..." preamble before a tool call.
-                    if fullResponse.count > 120 || !webSearchStatusText.isEmpty {
-                        webSearchStatusText = ""
-                    }
 
                     if let idx = messages.lastIndex(where: { $0.id == assistantMsg.id }) {
                         let existing = messages[idx]
