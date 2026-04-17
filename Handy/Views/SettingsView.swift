@@ -267,21 +267,36 @@ struct SettingsView: View {
                     .font(.system(size: 11))
                     .padding(.top, 1)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text("brave search — web queries, docs, latest versions")
-                        .font(DS.Typography.caption)
-                        .foregroundColor(DS.Colors.textTertiary)
-                    Text("jina reader — reads full web pages for deep context (optional, free tier)")
-                        .font(DS.Typography.caption)
-                        .foregroundColor(DS.Colors.textTertiary)
-                    Text("github search — finds repos, packages, and libraries (optional, free)")
-                        .font(DS.Typography.caption)
-                        .foregroundColor(DS.Colors.textTertiary)
+                    toolStatusRow("brave search — web queries, docs, latest versions",
+                                  available: KeychainManager.hasAPIKey(.braveSearch))
+                    toolStatusRow("jina reader — reads full web pages for deep context",
+                                  available: true)
+                    toolStatusRow("github search — finds repos, packages, and libraries",
+                                  available: true)
                 }
+            }
+
+            if !KeychainManager.hasAPIKey(.braveSearch) {
+                Text("github search and page reading work without any keys. add a brave key for full web search.")
+                    .font(DS.Typography.caption)
+                    .foregroundColor(DS.Colors.warning)
+                    .padding(.top, 2)
             }
         }
         .padding(DS.Spacing.md)
         .background(DS.Colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+    }
+
+    private func toolStatusRow(_ text: String, available: Bool) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: available ? "checkmark.circle.fill" : "circle.dashed")
+                .font(.system(size: 9))
+                .foregroundColor(available ? DS.Colors.success : DS.Colors.textMuted)
+            Text(text)
+                .font(DS.Typography.caption)
+                .foregroundColor(available ? DS.Colors.textTertiary : DS.Colors.textMuted)
+        }
     }
 
     // MARK: - Mode Section

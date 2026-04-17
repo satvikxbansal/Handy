@@ -429,6 +429,13 @@ struct MessageBubbleView: View {
             }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: DS.Spacing.xs) {
+                if !message.searchToolsUsed.isEmpty {
+                    Text(searchToolsLabel(message.searchToolsUsed))
+                        .font(.system(size: 10, weight: .medium, design: .default))
+                        .italic()
+                        .foregroundColor(DS.Colors.webSearchAccent.opacity(0.8))
+                }
+
                 Text(message.content)
                     .font(DS.Typography.body)
                     .foregroundColor(DS.Colors.textPrimary)
@@ -500,6 +507,18 @@ struct MessageBubbleView: View {
         case .assistant: return DS.Colors.assistantBubble
         case .system: return DS.Colors.errorSubtle
         }
+    }
+
+    private func searchToolsLabel(_ tools: [String]) -> String {
+        let names = tools.map { tool -> String in
+            switch tool {
+            case "web_search": return "web searched"
+            case "github_search": return "github searched"
+            case "fetch_page": return "page fetched"
+            default: return tool
+            }
+        }
+        return names.joined(separator: " · ")
     }
 
     private func timeString(_ date: Date) -> String {

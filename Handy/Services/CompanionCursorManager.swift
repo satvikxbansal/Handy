@@ -112,6 +112,13 @@ private struct ResponseBubbleSizePreferenceKey: PreferenceKey {
     }
 }
 
+private struct WebSearchBubbleSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
 /// How long the buddy stays at the target after a successful POINT before flying back.
 private enum PointDwellTiming {
     /// Wall-clock time from entering `pointingAtTarget` until the return flight begins (inclusive max 5s).
@@ -153,6 +160,7 @@ struct CompanionCursorView: View {
     @State private var responseBubbleHideTask: DispatchWorkItem?
     @State private var lastShownTranscript: String = ""
     @State private var lastShownResponse: String = ""
+    @State private var webSearchBubbleSize: CGSize = .zero
 
     private let navigationPointerPhrases = [
         "right here!",
@@ -223,6 +231,37 @@ struct CompanionCursorView: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.001)
+
+            // Blue web search status bubble — shown while Claude is calling a search tool
+            if isCursorOnThisScreen && !manager.webSearchStatusText.isEmpty {
+                HStack(spacing: 4) {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .tint(.white)
+                        .scaleEffect(0.7)
+                    Text(manager.webSearchStatusText)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(DS.Colors.webSearchAccent)
+                        .shadow(color: DS.Colors.webSearchAccent.opacity(0.5), radius: 6, x: 0, y: 0)
+                )
+                .fixedSize()
+                .overlay(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: WebSearchBubbleSizePreferenceKey.self, value: geo.size)
+                    }
+                )
+                .position(bubblePosition(bubbleSize: webSearchBubbleSize, preferredXOffset: 10, preferredYOffset: -12))
+                .animation(.spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0), value: cursorPosition)
+                .animation(.easeOut(duration: 0.25), value: manager.webSearchStatusText)
+                .onPreferenceChange(WebSearchBubbleSizePreferenceKey.self) { webSearchBubbleSize = $0 }
+                .transition(.opacity)
+            }
 
             // Navigation pointer bubble — shown when buddy arrives at a detected element (hidden during voice replies to avoid overlapping the green response bubble).
             if !manager.suppressCompanionNavigationLabelBubble
@@ -394,6 +433,11 @@ struct CompanionCursorView: View {
             lastShownResponse = newText
             withAnimation { transcriptBubbleOpacity = 0.0 }
             streamResponseBubbleText(newText)
+        }
+        .onChange(of: manager.webSearchStatusText) { newText in
+            if !newText.isEmpty {
+                withAnimation(.easeOut(duration: 0.2)) { transcriptBubbleOpacity = 0.0 }
+            }
         }
         .animation(.easeOut(duration: 0.12), value: manager.companionSuppressedForFloatingAccessoryDrag)
         .onChange(of: manager.voiceState) { newState in

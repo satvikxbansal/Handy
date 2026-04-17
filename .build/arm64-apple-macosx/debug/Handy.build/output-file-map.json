@@ -128,6 +128,13 @@
     "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.swiftdeps",
     "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.dia"
   },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WebSearchService.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.dia"
+  },
   "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift": {
     "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.d",
     "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swift.o",

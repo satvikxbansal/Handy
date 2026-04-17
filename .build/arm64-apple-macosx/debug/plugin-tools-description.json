@@ -96,6 +96,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WebSearchService.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift"
         },
         {
@@ -145,6 +149,7 @@
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView.swift.o",
@@ -282,6 +287,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swift.o"
         },
         {
@@ -325,6 +334,7 @@
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ScreenCaptureService.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SpeechRecognitionService.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/TTSService.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WebSearchService.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/PointParser.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatInterfaceView.swift",
@@ -364,6 +374,7 @@
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ScreenCaptureService.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SpeechRecognitionService.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/TTSService.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WebSearchService.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/PointParser.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatInterfaceView.swift",
@@ -540,6 +551,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WebSearchService.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift"
         },
         {
@@ -659,6 +674,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TranslucentFloatingChromeViews.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swift.o"
         }
       ],
       "outputFilePath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.product/Objects.LinkFileList"

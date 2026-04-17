@@ -70,6 +70,12 @@ final class HandyManager: NSObject, ObservableObject {
     /// The AI's spoken response — shown in a green bubble near the cursor.
     @Published var overlayResponseText: String = ""
 
+    // MARK: - Web Search Overlay (shown near companion cursor during tool execution)
+
+    /// Brief status text shown in a blue bubble near the cursor while a web search tool is executing.
+    /// Empty when no search is in progress.
+    @Published var webSearchStatusText: String = ""
+
     func clearDetectedElementLocation() {
         detectedElementScreenLocation = nil
         detectedElementDisplayFrame = nil
@@ -258,6 +264,32 @@ final class HandyManager: NSObject, ObservableObject {
     if pointing wouldn't help, append [POINT:none].
     """
 
+    /// Builds the system prompt addendum based on which search tools are actually available.
+    private static func webSearchPromptAddendum(hasBraveKey: Bool) -> String {
+        var tools: [String] = []
+        if hasBraveKey { tools.append("web_search") }
+        tools.append("fetch_page")
+        tools.append("github_search")
+        let toolList = tools.joined(separator: ", ")
+
+        var text = "\n\n    web search: you have access to \(toolList) tools."
+        if hasBraveKey {
+            text += " use them when the user's question needs current or real-time information that your training data might not cover."
+        } else {
+            text += " you do NOT have web_search (no API key configured) — but you CAN use github_search to find repositories and fetch_page to read any URL directly. for questions needing a general web search, tell the user to add a brave search API key in settings for full web search capability."
+        }
+        text += " when you use search or fetched results to answer, briefly mention your source naturally (e.g. \"according to the react native docs, the latest version is...\"). in voice responses, just name the source; in chat, you may include a link. do not list raw URLs in spoken responses."
+        return text
+    }
+
+    /// Whether the user has turned on web search mode.
+    /// GitHub search and page reading are free (no key needed), so the toggle alone is enough.
+    /// Brave web search requires its own key — if missing, only github_search and fetch_page
+    /// are offered to Claude; web_search is excluded from the tool list.
+    private var isWebSearchActive: Bool {
+        AppSettings.shared.webSearchEnabled
+    }
+
     // MARK: - Lifecycle
 
     private override init() {
@@ -362,12 +394,30 @@ final class HandyManager: NSObject, ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
-                guard app.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
-                let info = ScreenCaptureService.focusedAppInfo()
-                self.lastNonHandyFrontmostInfo = (info.0, info.1, info.2)
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+            guard app.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
+            // Capture the app name and bundle ID directly from the notification's
+            // NSRunningApplication — NOT from focusedAppInfo(). The latter re-reads
+            // frontmostApplication which, inside a Task hop, could already be a
+            // different app (race condition that caused stale "Terminal" tool names).
+            let appName = app.localizedName ?? "Unknown"
+            let bundleID = app.bundleIdentifier
+            // Window title still needs AX, read it from the activated app's PID directly.
+            var windowTitle = ""
+            let appRef = AXUIElementCreateApplication(app.processIdentifier)
+            var windowValue: AnyObject?
+            if AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &windowValue) == .success {
+                var titleValue: AnyObject?
+                if AXUIElementCopyAttributeValue(windowValue as! AXUIElement, kAXTitleAttribute as CFString, &titleValue) == .success {
+                    windowTitle = titleValue as? String ?? ""
+                }
+            }
+            // Set immediately — no Task hop, no async dispatch. The observer
+            // runs on .main queue, so we are on the main thread. assumeIsolated
+            // lets us write the @MainActor property synchronously, ensuring the
+            // value is available the instant captureAccessoryChatOpenToolSnapshot reads it.
+            MainActor.assumeIsolated { [weak self] in
+                self?.lastNonHandyFrontmostInfo = (appName, windowTitle, bundleID)
             }
         }
     }
@@ -386,9 +436,21 @@ final class HandyManager: NSObject, ObservableObject {
             print("📎 Accessory chat open — snapshot from frontmost: \"\(info.0)\" (\(info.2 ?? "nil"))")
             return
         }
-        if let ext = lastNonHandyFrontmostInfo {
+        // Handy is already frontmost (clicking widget activated it).
+        // Priority: (1) lastNonHandyFrontmostInfo if it matches our last resolved bundle
+        //           (2) currentToolName + lastDetectedBundleID from a recent resolved message
+        //           (3) lastNonHandyFrontmostInfo even if it doesn't match (best effort)
+        // This prevents stale notification data from overwriting a correctly-resolved context.
+        if let ext = lastNonHandyFrontmostInfo,
+           ext.bundleID == lastDetectedBundleID {
             accessoryChatOpenSnapshot = (ext.appName, ext.windowTitle, ext.bundleID, Date())
-            print("📎 Accessory chat open — snapshot from last non-Handy app: \"\(ext.appName)\" (\(ext.bundleID ?? "nil"))")
+            print("📎 Accessory chat open — snapshot from last non-Handy app (matches resolved): \"\(ext.appName)\" (\(ext.bundleID ?? "nil"))")
+        } else if !currentToolName.isEmpty, let bid = lastDetectedBundleID {
+            accessoryChatOpenSnapshot = (currentToolName, "", bid, Date())
+            print("📎 Accessory chat open — snapshot from current tool context: \"\(currentToolName)\" (\(bid))")
+        } else if let ext = lastNonHandyFrontmostInfo {
+            accessoryChatOpenSnapshot = (ext.appName, ext.windowTitle, ext.bundleID, Date())
+            print("📎 Accessory chat open — snapshot from last non-Handy app (fallback): \"\(ext.appName)\" (\(ext.bundleID ?? "nil"))")
         }
     }
 
@@ -464,9 +526,12 @@ final class HandyManager: NSObject, ObservableObject {
 
         let ownBundleID = Bundle.main.bundleIdentifier
         if bundleID == ownBundleID {
-            // Chat panel is key — frontmost app is Handy, not Chrome. Still read the *last active*
-            // browser’s address bar (cached PID) so tab/site changes update context and history.
-            if let url = ScreenCaptureService.browserURL(),
+            // Handy is frontmost (chat panel or widget). Only refresh browser context
+            // if the LAST DETECTED APP was a browser. Otherwise a background Chrome
+            // would overwrite Xcode/Cursor/etc. context (the root cause of DL-069).
+            let lastWasBrowser = ScreenCaptureService.isBrowserBundleID(lastDetectedBundleID)
+            if lastWasBrowser,
+               let url = ScreenCaptureService.browserURL(),
                let siteKey = ScreenCaptureService.normalizedBrowserSiteKey(from: url),
                let toolFromURL = ScreenCaptureService.umbrellaSiteLabel(from: url) {
                 let browserSiteChanged = lastBrowserSiteKey != nil && siteKey != lastBrowserSiteKey
@@ -491,7 +556,7 @@ final class HandyManager: NSObject, ObservableObject {
                     }
                 }
             } else {
-                print("🔍   Handy is frontmost — no browser URL (last active browser unknown or AX failed)")
+                print("🔍   Handy is frontmost — keeping current context: \"\(currentToolName)\" (lastWasBrowser=\(lastWasBrowser))")
             }
             return currentToolName.isEmpty ? appName : currentToolName
         }
@@ -653,13 +718,19 @@ final class HandyManager: NSObject, ObservableObject {
                 }
 
                 let history = historyManager.recentTurns(for: toolName)
-                let systemPrompt: String
+                var systemPrompt: String
                 if AppSettings.shared.assistantMode == .tutor {
                     systemPrompt = Self.tutorModeSystemPrompt
                 } else if fromVoice {
                     systemPrompt = Self.voiceSystemPrompt
                 } else {
                     systemPrompt = Self.chatSystemPrompt
+                }
+
+                let useWebSearch = self.isWebSearchActive
+                let hasBraveKey = KeychainManager.hasAPIKey(.braveSearch)
+                if useWebSearch {
+                    systemPrompt += Self.webSearchPromptAddendum(hasBraveKey: hasBraveKey)
                 }
 
                 let introPrefix = messages.count <= 1
@@ -671,16 +742,59 @@ final class HandyManager: NSObject, ObservableObject {
 
                 var fullResponse = ""
                 voiceState = .processing
+                webSearchStatusText = ""
+                var collectedSearchTools: [String] = []
 
-                for try await chunk in claudeAPI.streamResponseAsync(
-                    userMessage: text,
-                    images: images,
-                    conversationHistory: history,
-                    systemPrompt: systemPrompt
-                ) {
+                let stream: AsyncThrowingStream<String, Error>
+                if useWebSearch {
+                    let availableTools = ClaudeAPIService.availableWebSearchTools()
+                    stream = claudeAPI.streamResponseWithToolsAsync(
+                        userMessage: text,
+                        images: images,
+                        conversationHistory: history,
+                        systemPrompt: systemPrompt,
+                        tools: availableTools,
+                        onToolUse: { [weak self] searchToolName in
+                            MainActor.assumeIsolated {
+                                guard let self else { return }
+                                if !collectedSearchTools.contains(searchToolName) {
+                                    collectedSearchTools.append(searchToolName)
+                                }
+                                switch searchToolName {
+                                case "web_search":
+                                    self.webSearchStatusText = "Searching the web..."
+                                    self.loadingVerb = "Searching the web..."
+                                case "github_search":
+                                    self.webSearchStatusText = "Searching GitHub..."
+                                    self.loadingVerb = "Searching GitHub..."
+                                case "fetch_page":
+                                    self.webSearchStatusText = "Reading page..."
+                                    self.loadingVerb = "Reading page..."
+                                default:
+                                    self.webSearchStatusText = "Looking things up..."
+                                    self.loadingVerb = "Looking things up..."
+                                }
+                            }
+                        }
+                    )
+                } else {
+                    stream = claudeAPI.streamResponseAsync(
+                        userMessage: text,
+                        images: images,
+                        conversationHistory: history,
+                        systemPrompt: systemPrompt
+                    )
+                }
+
+                for try await chunk in stream {
                     guard !Task.isCancelled else { return }
                     fullResponse += chunk
                     streamingText = introPrefix + fullResponse
+                    // Clear search status only once we have substantial text (the final answer),
+                    // not during Claude's brief "let me check..." preamble before a tool call.
+                    if fullResponse.count > 120 || !webSearchStatusText.isEmpty {
+                        webSearchStatusText = ""
+                    }
 
                     if let idx = messages.lastIndex(where: { $0.id == assistantMsg.id }) {
                         let existing = messages[idx]
@@ -712,6 +826,9 @@ final class HandyManager: NSObject, ObservableObject {
                     let spokenRaw = parts.spoken
                     voiceSpokenUnclamped = spokenRaw
                     textForTTS = PointParser.clampVoiceSpokenForTTS(spokenRaw)
+                    // For chat display: if tools were used, the fullResponse has preamble
+                    // text ("let me check...") from the first pass. Keep it — it shows the
+                    // thought process. But `parts.display` already strips [SPOKEN] tags.
                     textForChat = parts.display
                 } else {
                     let cleaned = PointParser.stripPointTags(from: finalText)
@@ -729,7 +846,8 @@ final class HandyManager: NSObject, ObservableObject {
                         content: textForChat,
                         timestamp: existing.timestamp,
                         toolName: toolName,
-                        isStreaming: false
+                        isStreaming: false,
+                        searchToolsUsed: collectedSearchTools
                     )
                 }
 
@@ -775,13 +893,15 @@ final class HandyManager: NSObject, ObservableObject {
                 isProcessing = false
                 streamingText = ""
                 voiceState = .idle
+                webSearchStatusText = ""
 
             } catch is CancellationError {
-                // User sent a new message — interrupted intentionally
+                webSearchStatusText = ""
             } catch {
                 stopLoadingAnimation()
                 voiceState = .idle
                 isProcessing = false
+                webSearchStatusText = ""
                 errorMessage = error.localizedDescription
 
                 if let idx = messages.lastIndex(where: { $0.role == .assistant && $0.isStreaming }) {
