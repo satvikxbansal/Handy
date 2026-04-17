@@ -10,6 +10,10 @@ The deeper idea is **context that matches how you actually work**. Most assistan
 
 ---
 
+![Handy — High-Level Architecture](assets/handy-hld.png)
+
+---
+
 ## What makes it different
 
 ### Smart app switch (tool context)
