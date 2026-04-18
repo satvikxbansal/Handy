@@ -262,7 +262,30 @@ final class WebSearchService {
             "\\d{4} (update|release|version)"
         ]
 
-        let allPatterns = recencyPatterns + discoveryPatterns + installPatterns + versionPatterns
+        let financePatterns = [
+            "why is .* (up|down|falling|rising|crashing|rallying|tanking|surging|dropping|pumping)",
+            "stock (price|market|news|update|today|analysis)",
+            "(share|stock) price of",
+            "what (happened|is happening) (to|with|in) .* (stock|market|share|nifty|sensex|nasdaq|dow)",
+            "(buy|sell|hold) .* (stock|share)",
+            "trading view", "tradingview",
+            "(nifty|sensex|nasdaq|dow jones|s&p 500|s&p500|sp500|russell|ftse|nikkei)",
+            "(groww|zerodha|kite|upstox|angelone|angel one|robinhood|webull|etrade|fidelity)",
+            "(impact|effect) of .* (on|for) .* (market|stock|share|trade)",
+            "(trump|tariff|war|sanctions|iran|china|fed|rbi|inflation|rate cut|rate hike).*market",
+            "market.*(trump|tariff|war|sanctions|iran|china|fed|rbi|inflation|rate cut|rate hike)",
+            "technical (analysis|chart|indicator|pattern)",
+            "(support|resistance) (level|zone|at)",
+            "(bull|bear)(ish)? (on|for|signal|trend|pattern)",
+            "(moving average|macd|rsi|bollinger|fibonacci|candlestick|volume profile)",
+            "(earnings|quarterly results|q[1-4] results|annual report|balance sheet)",
+            "(ipo|listing|delisting|stock split|dividend|bonus)",
+            "(crypto|bitcoin|btc|ethereum|eth|solana|sol) (price|today|news|crash|rally)",
+            "what is .* (trading|priced) at",
+            "(gold|silver|crude|oil|commodity) (price|today|up|down)"
+        ]
+
+        let allPatterns = recencyPatterns + discoveryPatterns + installPatterns + versionPatterns + financePatterns
 
         for pattern in allPatterns {
             if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {

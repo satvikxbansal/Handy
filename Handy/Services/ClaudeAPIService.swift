@@ -378,12 +378,19 @@ final class ClaudeAPIService {
         compatibility questions ("does X support Y", "is X compatible with"), \
         specific API usage or documentation ("how to use the X API", "X API documentation"), \
         changelogs, release notes, breaking changes, \
-        anything recency-dependent ("what's new in", "current", "2025", "2026", "recently released"). \
+        anything recency-dependent ("what's new in", "current", "2025", "2026", "recently released"), \
+        stock market or trading questions ("why is X stock up/down", stock price, market news, earnings), \
+        financial market impact questions (tariffs, war, policy changes affecting markets), \
+        cryptocurrency prices or news, commodity prices (gold, oil, etc.), \
+        questions about stocks/shares visible on TradingView or any trading platform on screen. \
         DO NOT USE when: the question is about general UI navigation (where is a button), \
         code review of visible code, explaining a concept you know well (what is a closure, explain MVC), \
-        anything clearly visible on the user's screen, \
+        anything clearly visible on the user's screen that doesn't need external data, \
         conversation continuity ("do that again", "try a different approach"), \
-        or blender/xcode/app-specific navigation that the screenshot already shows.
+        or blender/xcode/app-specific navigation that the screenshot already shows. \
+        NOTE: if the user is on a trading platform (TradingView, Groww, Zerodha, Robinhood, etc.) \
+        and asks about a stock or chart visible on screen, ALWAYS search — the screenshot shows \
+        the chart but you need current news/data to explain WHY it moved.
         """,
         "input_schema": [
             "type": "object",
