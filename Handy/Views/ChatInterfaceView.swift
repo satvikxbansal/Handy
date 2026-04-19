@@ -38,7 +38,7 @@ struct ChatInterfaceView: View {
             }
         }
         .background(DS.Colors.background)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(settings.isLightMode ? .light : .dark)
         .animation(.easeInOut(duration: 0.2), value: showSettings)
         .onChange(of: manager.chatPanelPresentedContentResetNonce) { _, _ in
             showSettings = false

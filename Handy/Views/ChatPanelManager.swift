@@ -4,7 +4,7 @@ import SwiftUI
 /// Manages the floating, draggable chat panel window.
 @MainActor
 final class ChatPanelManager: NSObject, NSWindowDelegate {
-    private var panel: KeyablePanel?
+    private(set) var panel: KeyablePanel?
     private var statusItem: NSStatusItem?
     private var isVisible = false
 
@@ -49,10 +49,11 @@ final class ChatPanelManager: NSObject, NSWindowDelegate {
         let panelWidth: CGFloat = min(420, screenSize.width * 0.28)
         let panelHeight: CGFloat = min(600, screenSize.height * 0.65)
 
+        let colorScheme: ColorScheme = AppSettings.shared.isLightMode ? .light : .dark
         let chatView = ChatInterfaceView()
             .environmentObject(HandyManager.shared)
             .environmentObject(AppSettings.shared)
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(colorScheme)
 
         let hostingView = NSHostingView(rootView: chatView)
         hostingView.frame = NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight)
@@ -74,7 +75,7 @@ final class ChatPanelManager: NSObject, NSWindowDelegate {
         p.minSize = NSSize(width: 360, height: 400)
         p.maxSize = NSSize(width: 600, height: 900)
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        p.appearance = NSAppearance(named: .darkAqua)
+        p.appearance = NSAppearance(named: AppSettings.shared.isLightMode ? .aqua : .darkAqua)
         p.delegate = self
 
         panel = p

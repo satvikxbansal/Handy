@@ -1,5 +1,10 @@
 import Foundation
 
+enum AppTheme: String, CaseIterable, Codable {
+    case dark = "Dark"
+    case light = "Light"
+}
+
 enum AssistantMode: String, CaseIterable, Codable {
     case helpOnly = "Help Only"
     case tutor = "Tutor"
@@ -70,6 +75,12 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(webSearchEnabled, forKey: Keys.webSearchEnabled) }
     }
 
+    @Published var appTheme: AppTheme {
+        didSet { UserDefaults.standard.set(appTheme.rawValue, forKey: Keys.appTheme) }
+    }
+
+    var isLightMode: Bool { appTheme == .light }
+
     private enum Keys {
         static let assistantMode = "handy_assistantMode"
         static let sttProvider = "handy_sttProvider"
@@ -77,6 +88,7 @@ final class AppSettings: ObservableObject {
         static let sarvamVoice = "handy_sarvamVoice"
         static let showFloatingAccessWidget = "handy_showFloatingAccessWidget"
         static let webSearchEnabled = "handy_webSearchEnabled"
+        static let appTheme = "handy_appTheme"
     }
 
     private init() {
@@ -101,5 +113,8 @@ final class AppSettings: ObservableObject {
 
         self.showFloatingAccessWidget = UserDefaults.standard.object(forKey: Keys.showFloatingAccessWidget) as? Bool ?? false
         self.webSearchEnabled = UserDefaults.standard.object(forKey: Keys.webSearchEnabled) as? Bool ?? false
+
+        let themeRaw = UserDefaults.standard.string(forKey: Keys.appTheme) ?? AppTheme.dark.rawValue
+        self.appTheme = AppTheme(rawValue: themeRaw) ?? .dark
     }
 }

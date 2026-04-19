@@ -46,7 +46,7 @@ struct SettingsView: View {
             .padding(DS.Spacing.lg)
         }
         .background(DS.Colors.background)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(settings.isLightMode ? .light : .dark)
         .onAppear { loadExistingKeys() }
     }
 
@@ -385,7 +385,57 @@ struct SettingsView: View {
             .padding(DS.Spacing.md)
             .background(DS.Colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+
+            Divider().background(DS.Colors.borderSubtle)
+
+            sectionHeader("Appearance", icon: "paintbrush")
+
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(AppTheme.allCases, id: \.self) { theme in
+                    Button(action: {
+                        settings.appTheme = theme
+                        refreshPanelAppearance()
+                    }) {
+                        HStack(spacing: DS.Spacing.sm) {
+                            Image(systemName: theme == .dark ? "moon.fill" : "sun.max.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(settings.appTheme == theme ? (theme == .dark ? DS.Colors.accent : Color(hex: "F59E0B")) : DS.Colors.textTertiary)
+                            Text(theme.rawValue)
+                                .font(DS.Typography.titleSmall)
+                                .foregroundColor(DS.Colors.textPrimary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(settings.appTheme == theme ? DS.Colors.accentSubtle.opacity(0.5) : DS.Colors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.sm)
+                                .stroke(settings.appTheme == theme ? DS.Colors.accent.opacity(0.5) : DS.Colors.border, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "info.circle")
+                    .foregroundColor(DS.Colors.textTertiary)
+                    .font(.system(size: 12))
+                Text("Theme changes apply after reopening the chat panel.")
+                    .font(DS.Typography.caption)
+                    .foregroundColor(DS.Colors.textTertiary)
+            }
+            .padding(DS.Spacing.md)
+            .background(DS.Colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
         }
+    }
+
+    private func refreshPanelAppearance() {
+        guard let panel = HandyManager.shared.chatPanelManager?.panel else { return }
+        let appearance: NSAppearance.Name = settings.isLightMode ? .aqua : .darkAqua
+        panel.appearance = NSAppearance(named: appearance)
+        panel.backgroundColor = NSColor(DS.Colors.background)
     }
 
     // MARK: - Helpers

@@ -10,7 +10,7 @@ struct FloatingAccessWidgetView: View {
             // No SwiftUI `.shadow` here: it expands into a rectangular layer that often reads as a dull grey box
             // on light backgrounds behind a transparent `NSPanel`. Depth comes from the amber stroke + dark fill.
             RoundedRectangle(cornerRadius: FloatingAccessWidgetMetrics.cornerRadius, style: .continuous)
-                .fill(DS.Colors.surface)
+                .fill(DS.Colors.floatingWidgetFill)
 
             // `strokeBorder` draws inside the shape for uniform weight.
             RoundedRectangle(cornerRadius: FloatingAccessWidgetMetrics.cornerRadius, style: .continuous)
@@ -24,21 +24,24 @@ struct FloatingAccessWidgetView: View {
         .accessibilityLabel("Handy — open chat or drag to move")
     }
 
+    private var hoverTint: Color {
+        AppSettings.shared.isLightMode ? Color(hex: "1D1D1F") : .white
+    }
+
     private var widgetOutlineColor: Color {
-        manager.floatingAccessoryInteractionHighlighted ? .white.opacity(0.95) : DS.Colors.floatingWidgetOutline
+        manager.floatingAccessoryInteractionHighlighted ? hoverTint.opacity(0.95) : DS.Colors.floatingWidgetOutline
     }
 
     private var accessoryAccent: Color {
-        manager.floatingAccessoryInteractionHighlighted ? .white : DS.Colors.accent.opacity(0.9)
+        manager.floatingAccessoryInteractionHighlighted ? hoverTint : DS.Colors.accent.opacity(0.9)
     }
 
-    /// Matches `CompanionWaveformView` / buddy listening — blue bars, not success green.
     private var listeningBarFill: Color {
-        manager.floatingAccessoryInteractionHighlighted ? .white : DS.Colors.overlayCursorBlue
+        manager.floatingAccessoryInteractionHighlighted ? hoverTint : DS.Colors.overlayCursorBlue
     }
 
     private var processingStroke: Color {
-        manager.floatingAccessoryInteractionHighlighted ? .white : DS.Colors.overlayCursorBlue
+        manager.floatingAccessoryInteractionHighlighted ? hoverTint : DS.Colors.overlayCursorBlue
     }
 
     @ViewBuilder

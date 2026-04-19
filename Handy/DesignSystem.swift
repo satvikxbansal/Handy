@@ -1,31 +1,33 @@
 import SwiftUI
 
 enum DS {
-    // MARK: - Colors (Dark mode only)
+    private static var isLight: Bool { AppSettings.shared.isLightMode }
+
+    // MARK: - Colors (Theme-aware: dark default, optional light)
     enum Colors {
-        static let background = Color(hex: "0D0D0D")
-        static let surface = Color(hex: "1A1A1A")
-        static let surfaceElevated = Color(hex: "252525")
-        static let surfaceHover = Color(hex: "2A2A2A")
-        static let border = Color(hex: "333333")
-        static let borderSubtle = Color(hex: "262626")
+        static var background: Color { isLight ? Color(hex: "FFFFFF") : Color(hex: "0D0D0D") }
+        static var surface: Color { isLight ? Color(hex: "F5F5F7") : Color(hex: "1A1A1A") }
+        static var surfaceElevated: Color { isLight ? Color(hex: "EAEAEC") : Color(hex: "252525") }
+        static var surfaceHover: Color { isLight ? Color(hex: "E0E0E2") : Color(hex: "2A2A2A") }
+        static var border: Color { isLight ? Color(hex: "D1D1D6") : Color(hex: "333333") }
+        static var borderSubtle: Color { isLight ? Color(hex: "E5E5EA") : Color(hex: "262626") }
 
-        static let textPrimary = Color(hex: "F5F5F5")
-        static let textSecondary = Color(hex: "A3A3A3")
-        static let textTertiary = Color(hex: "737373")
-        static let textMuted = Color(hex: "525252")
+        static var textPrimary: Color { isLight ? Color(hex: "1D1D1F") : Color(hex: "F5F5F5") }
+        static var textSecondary: Color { isLight ? Color(hex: "6E6E73") : Color(hex: "A3A3A3") }
+        static var textTertiary: Color { isLight ? Color(hex: "8E8E93") : Color(hex: "737373") }
+        static var textMuted: Color { isLight ? Color(hex: "AEAEB2") : Color(hex: "525252") }
 
-        static let accent = Color(hex: "3B82F6")
-        static let accentHover = Color(hex: "2563EB")
-        static let accentSubtle = Color(hex: "1E3A5F")
+        static var accent: Color { Color(hex: "3B82F6") }
+        static var accentHover: Color { Color(hex: "2563EB") }
+        static var accentSubtle: Color { isLight ? Color(hex: "DBEAFE") : Color(hex: "1E3A5F") }
 
-        static let success = Color(hex: "22C55E")
-        static let warning = Color(hex: "F59E0B")
-        static let error = Color(hex: "EF4444")
-        static let errorSubtle = Color(hex: "3B1111")
+        static var success: Color { Color(hex: "22C55E") }
+        static var warning: Color { Color(hex: "F59E0B") }
+        static var error: Color { Color(hex: "EF4444") }
+        static var errorSubtle: Color { isLight ? Color(hex: "FEE2E2") : Color(hex: "3B1111") }
 
-        static let userBubble = Color(hex: "1E3A5F")
-        static let assistantBubble = Color(hex: "1F1F1F")
+        static var userBubble: Color { isLight ? Color(hex: "DBEAFE") : Color(hex: "1E3A5F") }
+        static var assistantBubble: Color { isLight ? Color(hex: "F5F5F7") : Color(hex: "1F1F1F") }
 
         static let cursorBlue = Color(hex: "3B82F6")
         static let overlayCursorBlue = Color(hex: "3380FF")
@@ -33,12 +35,11 @@ enum DS {
         static let overlayTranscriptBubble = Color(hex: "CA8A04")
         static let overlayResponseBubble = Color(hex: "16A34A")
 
-        /// Subtle ring around the floating accessory widget (idle); turns white on hover via the view layer.
-        static let floatingWidgetOutline = Color(hex: "F59E0B").opacity(0.55)
+        static var floatingWidgetOutline: Color { Color(hex: "F59E0B").opacity(0.55) }
+        static var floatingWidgetFill: Color { isLight ? Color(hex: "FFFFFF") : Color(hex: "1A1A1A") }
 
-        /// Web search feature accent (teal) — used for the search toggle and section header.
-        static let webSearchAccent = Color(hex: "14B8A6")
-        static let webSearchAccentSubtle = Color(hex: "0F3D38")
+        static var webSearchAccent: Color { Color(hex: "14B8A6") }
+        static var webSearchAccentSubtle: Color { isLight ? Color(hex: "CCFBF1") : Color(hex: "0F3D38") }
     }
 
     // MARK: - Typography (SF Pro - system default)
