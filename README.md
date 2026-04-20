@@ -10,6 +10,8 @@ You can open chat with a keyboard shortcut, the menu bar, or an **optional tiny 
 
 The deeper idea is **context that matches how you actually work**. Most assistants forget that you were just in Xcode and are now in Slack, or that “Chrome” is not the app you care about—the **website** is. Handy tracks the **focused app and site**, keeps **separate conversation memory per place**, and only sends the **recent, relevant thread** to the model along with a fresh view of your displays. Your secrets stay **on your Mac** in the system Keychain; your chat history stays **local files** on disk—not in someone else’s cloud by default. When turned on, **web search** lets the model reach out to the internet for answers that need fresh data—without slowing down the questions that don’t.
 
+> [!NOTE]
+> A demo video is in [this LinkedIn post that kinda blew up](https://www.linkedin.com/posts/satvikbansal_opensource-ai-ugcPost-7451566626602188800--lHC?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAACmYNuUBBhrbyLfMJevwXc0cTW5QzyhSWdo).
 ---
 
 ![Handy — High-Level Architecture](assets/handy-hld.png)
