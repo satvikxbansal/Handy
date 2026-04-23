@@ -367,6 +367,106 @@ final class ClaudeAPIService {
         return tools
     }
 
+    /// Unified tool list builder used by the guide/help path.
+    /// - web-search tools are included only when `webSearchEnabled` and the required keys exist
+    /// - `submit_guided_workflow` is included only when `workflowEnabled` is true
+    static func availableTools(
+        webSearchEnabled: Bool,
+        workflowEnabled: Bool
+    ) -> [[String: Any]] {
+        var tools: [[String: Any]] = []
+        if webSearchEnabled {
+            tools.append(contentsOf: availableWebSearchTools())
+        }
+        if workflowEnabled {
+            tools.append(guidedWorkflowToolDef)
+        }
+        return tools
+    }
+
+    // MARK: - Guided Workflow Tool Definition
+
+    /// Local tool — the result is produced by Handy, not by an external API. Claude calls this
+    /// when it decides a normal guide/help request deserves a bounded 2-5 step click workflow.
+    static let guidedWorkflowToolDef: [String: Any] = [
+        "name": "submit_guided_workflow",
+        "description": """
+        Submit a bounded click-by-click UI workflow for Handy to drive. \
+        Use when the user's request is a short on-screen procedural task (menu navigation, \
+        settings / preferences, setup / configuration, export / share / send, compose / create, \
+        permissions / accounts) that needs 2-5 concrete clickable steps in the current app. \
+        All steps must be clickable UI targets. Do NOT emit a [POINT] tag in the same turn as \
+        this tool call — Handy will ignore it. The first step must be visible on the current \
+        screen now. Keep labels exact, visible, specific (avoid "button", "icon", "top left"). \
+        Maximum 5 steps. If one [POINT] or a normal answer is enough, do NOT use this tool.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "goal": [
+                    "type": "string",
+                    "description": "Short user-facing goal, lowercase (e.g. \"send an email in gmail\")."
+                ],
+                "app": [
+                    "type": "string",
+                    "description": "The app or site the workflow runs in (must match the current context)."
+                ],
+                "steps": [
+                    "type": "array",
+                    "description": "Ordered list of 2 to 5 click-only steps.",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "label": [
+                                "type": "string",
+                                "description": "Exact visible label of the clickable control (e.g. \"Compose\", \"Send\")."
+                            ],
+                            "hint": [
+                                "type": "string",
+                                "description": "Short instruction like \"click compose\" or \"click the body field\"."
+                            ],
+                            "expectedRole": [
+                                "type": "string",
+                                "description": "Optional accessibility role: button | menu | item | tab | field | toolbaritem | link | checkbox."
+                            ],
+                            "x": [
+                                "type": "integer",
+                                "description": "Optional screenshot-pixel-space x coordinate as a weak fallback."
+                            ],
+                            "y": [
+                                "type": "integer",
+                                "description": "Optional screenshot-pixel-space y coordinate as a weak fallback."
+                            ],
+                            "continuationMode": [
+                                "type": "string",
+                                "enum": ["immediate", "fixedDelayPreview", "keyboardIdlePreview"],
+                                "description": "How the next step should be revealed after THIS step is clicked. Use keyboardIdlePreview for typing / entering / pasting / prompt-box style flows. Use fixedDelayPreview for watch / read / listen / review / ai-thinking / loading / render / upload / processing style flows. Otherwise immediate."
+                            ],
+                            "previewDelaySeconds": [
+                                "type": "number",
+                                "description": "Used with fixedDelayPreview. Clamped to 1.0-5.0. Default 2.5."
+                            ],
+                            "idleSeconds": [
+                                "type": "number",
+                                "description": "Used with keyboardIdlePreview. Clamped to 1.0-3.0. Default 1.5."
+                            ],
+                            "maxPreviewDelaySeconds": [
+                                "type": "number",
+                                "description": "Used with keyboardIdlePreview. Clamped to 2.0-5.0. Default 4.0."
+                            ],
+                            "previewMessage": [
+                                "type": "string",
+                                "description": "Short line shown while waiting for the next step (e.g. \"after you're done typing, click send\"). Optional."
+                            ]
+                        ],
+                        "required": ["label", "hint"]
+                    ]
+                ]
+            ],
+            "required": ["goal", "app", "steps"]
+        ] as [String: Any]
+    ]
+
     private static let webSearchToolDef: [String: Any] = [
         "name": "web_search",
         "description": """
@@ -537,7 +637,8 @@ final class ClaudeAPIService {
         conversationHistory: [ConversationTurn],
         systemPrompt: String,
         tools: [[String: Any]]? = nil,
-        onToolUse: @escaping (String) -> Void
+        onToolUse: @escaping (String) -> Void,
+        onWorkflowSubmitted: (@Sendable ([String: Any]) async -> String)? = nil
     ) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             guard let apiKey = KeychainManager.getAPIKey(.claude) else {
@@ -621,7 +722,11 @@ final class ClaudeAPIService {
 
                         let toolResultContent: String
                         do {
-                            toolResultContent = try await self.executeTool(name: toolUse.name, input: toolUse.input)
+                            if toolUse.name == "submit_guided_workflow", let handler = onWorkflowSubmitted {
+                                toolResultContent = await handler(toolUse.input)
+                            } else {
+                                toolResultContent = try await self.executeTool(name: toolUse.name, input: toolUse.input)
+                            }
                         } catch {
                             toolResultContent = "Tool execution failed: \(error.localizedDescription)"
                             print("⚠️ Tool execution failed: \(error)")

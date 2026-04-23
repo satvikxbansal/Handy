@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/master.swiftdeps"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner.dia"
+  }
+}

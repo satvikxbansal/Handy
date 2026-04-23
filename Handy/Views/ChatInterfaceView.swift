@@ -166,6 +166,7 @@ struct ChatInterfaceView: View {
             if let error = manager.errorMessage {
                 errorBar(error)
             }
+            WorkflowChecklistView(runner: manager.workflowRunner)
             inputBar
         }
     }

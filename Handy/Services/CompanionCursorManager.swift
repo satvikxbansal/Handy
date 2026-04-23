@@ -420,7 +420,12 @@ struct CompanionCursorView: View {
             startNavigatingToElement(screenLocation: screenLocation)
         }
         .onChange(of: manager.overlayTranscriptText) { newText in
-            guard !newText.isEmpty else { return }
+            if newText.isEmpty {
+                // Explicit clear (e.g. workflow ended) — fade the yellow bubble out.
+                withAnimation { transcriptBubbleOpacity = 0.0 }
+                lastShownTranscript = ""
+                return
+            }
             lastShownTranscript = newText
             responseBubbleStreamedText = ""
             responseBubbleOpacity = 0.0

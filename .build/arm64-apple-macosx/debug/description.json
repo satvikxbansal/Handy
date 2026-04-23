@@ -1,6 +1,10 @@
 {
   "builtTestProducts" : [
-
+    {
+      "binaryPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.xctest/Contents/MacOS/HandyPackageTests",
+      "packagePath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy",
+      "productName" : "HandyPackageTests"
+    }
   ],
   "copyCommands" : {
 
@@ -56,7 +60,23 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowPlan.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowStep.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowContinuationPolicy.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowSessionState.swift"
         },
         {
           "kind" : "file",
@@ -65,6 +85,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClickDetector.swift"
         },
         {
           "kind" : "file",
@@ -88,6 +112,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SemanticElementResolver.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SpeechRecognitionService.swift"
         },
         {
@@ -100,11 +128,31 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowActivityMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowRunner.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/PointParser.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowControlPhraseDetector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowIntentDetector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowPlanValidator.swift"
         },
         {
           "kind" : "file",
@@ -117,6 +165,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/WorkflowChecklistView.swift"
         },
         {
           "kind" : "file",
@@ -139,22 +191,34 @@
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowPlan.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowStep.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowContinuationPolicy.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowSessionState.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClickDetector.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/CompanionCursorManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SemanticElementResolver.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowActivityMonitor.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowRunner.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowControlPhraseDetector.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowIntentDetector.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowPlanValidator.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView.swift.o",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatPanelManager.swift.o",
-        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.swift.o"
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowChecklistView.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -247,7 +311,23 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowPlan.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowStep.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowContinuationPolicy.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowSessionState.swift.o"
         },
         {
           "kind" : "file",
@@ -256,6 +336,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClickDetector.swift.o"
         },
         {
           "kind" : "file",
@@ -279,6 +363,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SemanticElementResolver.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.swift.o"
         },
         {
@@ -291,11 +379,31 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowActivityMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowRunner.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowControlPhraseDetector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowIntentDetector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowPlanValidator.swift.o"
         },
         {
           "kind" : "file",
@@ -308,6 +416,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowChecklistView.swift.o"
         },
         {
           "kind" : "file",
@@ -324,24 +436,297 @@
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ChatMessage.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowPlan.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowStep.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowContinuationPolicy.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowSessionState.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ChatHistoryManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClickDetector.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/CompanionCursorManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HandyManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HotkeyManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/OverlayManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ScreenCaptureService.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SemanticElementResolver.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SpeechRecognitionService.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/TTSService.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WebSearchService.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowActivityMonitor.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowRunner.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/PointParser.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowControlPhraseDetector.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowIntentDetector.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowPlanValidator.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatInterfaceView.swift",
         "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatPanelManager.swift",
-        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/SettingsView.swift"
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/SettingsView.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/WorkflowChecklistView.swift"
       ],
       "tempsPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.HandyPackageTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/sources",
+      "importPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules/HandyTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "HandyPackageTests",
+      "moduleOutputPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules/HandyPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/include/HandyPackageTests-Swift.h",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "handy"
+      ],
+      "outputFileMapPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules/HandyPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.HandyTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/sources",
+      "importPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/PointParserRegressionTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/SemanticElementResolverTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowContinuationPolicyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowControlPhraseDetectorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowIntentDetectorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowPlanValidatorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowRunnerTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "HandyTests",
+      "moduleOutputPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules/HandyTests.swiftmodule",
+      "objects" : [
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests.swift.o",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "handy"
+      ],
+      "outputFileMapPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules/HandyTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/PointParserRegressionTests.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/SemanticElementResolverTests.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowContinuationPolicyTests.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowControlPhraseDetectorTests.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowIntentDetectorTests.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowPlanValidatorTests.swift",
+        "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowRunnerTests.swift"
+      ],
+      "tempsPath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build",
       "wholeModuleOptimization" : false
     }
   },
@@ -364,22 +749,34 @@
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/HandyApp.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/AppSettings.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ChatMessage.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowPlan.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowStep.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowContinuationPolicy.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowSessionState.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ChatHistoryManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClickDetector.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/CompanionCursorManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HandyManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/HotkeyManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/OverlayManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ScreenCaptureService.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SemanticElementResolver.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SpeechRecognitionService.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/TTSService.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WebSearchService.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowActivityMonitor.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowRunner.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/PointParser.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowControlPhraseDetector.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowIntentDetector.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowPlanValidator.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatInterfaceView.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/ChatPanelManager.swift",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/SettingsView.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/WorkflowChecklistView.swift",
       "-I",
       "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -437,18 +834,172 @@
       "handy",
       "-driver-use-frontend-path",
       "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "HandyPackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "HandyPackageTests",
+      "-package-name",
+      "handy",
+      "-c",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/include/HandyPackageTests-Swift.h",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "handy",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "HandyTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "HandyTests",
+      "-package-name",
+      "handy",
+      "-c",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/PointParserRegressionTests.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/SemanticElementResolverTests.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowContinuationPolicyTests.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowControlPhraseDetectorTests.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowIntentDetectorTests.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowPlanValidatorTests.swift",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowRunnerTests.swift",
+      "-I",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "handy",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
     ]
   },
   "targetDependencyMap" : {
     "Handy" : [
 
+    ],
+    "HandyPackageTests" : [
+      "HandyTests",
+      "Handy"
+    ],
+    "HandyTests" : [
+      "Handy"
     ]
   },
   "testDiscoveryCommands" : {
 
   },
   "testEntryPointCommands" : {
+    "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.derived/runner.swift" : {
+      "inputs" : [
 
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.derived/runner.swift"
+        }
+      ]
+    }
   },
   "traitConfiguration" : {
     "default" : {
@@ -511,7 +1062,23 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowPlan.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/GuidedWorkflowStep.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/ScreenCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowContinuationPolicy.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Models/WorkflowSessionState.swift"
         },
         {
           "kind" : "file",
@@ -520,6 +1087,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClaudeAPIService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/ClickDetector.swift"
         },
         {
           "kind" : "file",
@@ -543,6 +1114,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SemanticElementResolver.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/SpeechRecognitionService.swift"
         },
         {
@@ -555,11 +1130,31 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowActivityMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Services/WorkflowRunner.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/KeychainManager.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/PointParser.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowControlPhraseDetector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowIntentDetector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Utilities/WorkflowPlanValidator.swift"
         },
         {
           "kind" : "file",
@@ -572,6 +1167,10 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Handy/Views/WorkflowChecklistView.swift"
         }
       ],
       "outputFilePath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/sources"
@@ -609,6 +1208,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClickDetector.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/CompanionCursorManager.swift.o"
         },
         {
@@ -626,6 +1229,14 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessoryInteractionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowPlan.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowStep.swift.o"
         },
         {
           "kind" : "file",
@@ -661,6 +1272,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SemanticElementResolver.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.swift.o"
         },
         {
@@ -678,9 +1293,279 @@
         {
           "kind" : "file",
           "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowActivityMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowChecklistView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowContinuationPolicy.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowControlPhraseDetector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowIntentDetector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowPlanValidator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowRunner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowSessionState.swift.o"
         }
       ],
       "outputFilePath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.product/Objects.LinkFileList"
+    },
+    "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/sources"
+    },
+    "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/AppSettings.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatHistoryManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatInterfaceView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatMessage.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ChatPanelManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClaudeAPIService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ClickDetector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/CompanionCursorManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/DesignSystem.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessWidgetView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/FloatingAccessoryInteractionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowPlan.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/GuidedWorkflowStep.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HandyManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/HotkeyManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/KeychainManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/OverlayManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/PointParser.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/ScreenCaptureService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SemanticElementResolver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/SpeechRecognitionService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TTSService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/TranslucentFloatingChromeViews.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WebSearchService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowActivityMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowChecklistView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowContinuationPolicy.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowControlPhraseDetector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowIntentDetector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowPlanValidator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowRunner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/Handy.build/WorkflowSessionState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/PointParserRegressionTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/SemanticElementResolverTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowContinuationPolicyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowControlPhraseDetectorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowIntentDetectorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowPlanValidatorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowRunnerTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/sources"
     },
     "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
       "alwaysOutOfDate" : true,

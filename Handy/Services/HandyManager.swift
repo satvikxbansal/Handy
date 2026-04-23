@@ -101,6 +101,30 @@ final class HandyManager: NSObject, ObservableObject {
     private let historyManager = ChatHistoryManager.shared
     private let companionCursor = CompanionCursorManager()
 
+    // MARK: - Guided Workflow
+
+    /// Bounded multi-step guidance runner. Created lazily so tests can substitute fakes if needed.
+    /// The runner is completely opt-in: it never runs in tutor mode, and never runs unless a
+    /// Claude tool call activates it.
+    let workflowRunner: WorkflowRunner = WorkflowRunner()
+
+    /// Captured screen frame (AppKit global coords) for the last plan we accepted,
+    /// used only for logging/debugging — not for runtime decisions.
+    private var lastAcceptedPlanBundleID: String?
+
+    /// Timestamp of the most recent workflow end. Used to keep continuation phrases
+    /// like "what next?" / "what do I do now?" engaged with workflow mode for a short
+    /// grace window after the runner ends (e.g. if the user interrupted with a voice follow-up).
+    private var lastWorkflowEndedAt: Date?
+
+    /// Holds a non-empty transcript string between the moment `stopVoiceInput` is called
+    /// and the moment `sendMessage` is invoked, so the workflow suspend/resume path can
+    /// decide correctly based on transcript content.
+    private var suspendedWorkflowActive: Bool { workflowRunner.isActive || {
+        if case .suspendedForVoiceQuery = workflowRunner.state { return true }
+        return false
+    }() }
+
     // MARK: - Tutor Mode
 
     private var tutorIdleCancellable: AnyCancellable?
@@ -264,6 +288,49 @@ final class HandyManager: NSObject, ObservableObject {
     if pointing wouldn't help, append [POINT:none].
     """
 
+    /// Model-facing addendum appended ONLY when WorkflowIntentDetector says this
+    /// guide/help request should be allowed to create a bounded click-by-click workflow.
+    /// Never appended for tutor mode.
+    static let guidedWorkflowPromptAddendum: String = """
+
+
+    workflow guidance (STRONG PREFERENCE):
+    the user just asked something that is a strong candidate for step-by-step guidance. you have TWO response modes:
+    1) call submit_guided_workflow(goal, app, steps) for a bounded 2-5 step click-by-click ui workflow — STRONGLY PREFERRED when your answer would naturally list 2 or more clicks
+    2) answer normally with one [POINT:x,y:label] — only when a SINGLE click completes the whole task
+
+    decision rule:
+    - if you would write "click X, then click Y" → use the workflow tool. always.
+    - if you would write "click X" and the user is done → normal answer + one [POINT] is fine.
+    - never write a multi-step click path as plain text when the workflow tool is available. the user will not see your text before the next step — they see your pointer. a plain-text list of clicks is the worst option here.
+
+    good fits for the workflow tool:
+    - menu / settings / preferences navigation (e.g. change a setting in multiple submenus)
+    - compose / create / send flows (e.g. new email, new issue, new branch, publish post)
+    - export / share / save-as / download flows
+    - setup / configuration / account / permission flows
+    - any "how do i X" that requires 2+ distinct on-screen clicks
+
+    plan construction rules:
+    - all steps in v1 must be clickable ui targets — typing/watching/waiting steps are still modeled as a click on the field/button that initiates them
+    - DO NOT emit a [POINT] tag in the same turn as a workflow tool call
+    - first step must be visible on the current screen right now
+    - keep labels exact, visible, and specific — copy the actual on-screen label when possible
+    - avoid vague labels like "button", "thing", "top left", "right side"
+    - keep the workflow short, linear, and bounded; maximum 5 total steps
+    - for the plan's "app" field, use whatever name best identifies the CURRENT on-screen context. the validator uses window titles + urls + tool names, so "Gmail" is fine even if the tool context is "google.com".
+
+    for steps that naturally involve typing, reading, watching, listening, waiting for ai output, or waiting for a short loading/rendering state:
+    - still model them as click-based steps (click the field, click the button, etc.)
+    - set continuationMode for the clicked step so handy can reveal the next click automatically
+    - use keyboardIdlePreview for typing / entering / pasting / prompt-box style flows
+    - use fixedDelayPreview for watch / read / listen / review / ai-thinking / loading / render / upload / processing style flows
+    - preview timing should be short and bounded
+    - timers only reveal the next click; they do not mean the user is definitely finished
+
+    if the entire task is ONE click, do not use the workflow tool — a normal answer with one [POINT] is better.
+    """
+
     /// Builds the system prompt addendum based on which search tools are actually available.
     private static func webSearchPromptAddendum(hasBraveKey: Bool) -> String {
         var tools: [String] = []
@@ -324,6 +391,7 @@ final class HandyManager: NSObject, ObservableObject {
 
         loadCurrentToolContext()
         bindTutorMode()
+        bindWorkflowRunner()
         startPermissionPolling()
         ScreenCaptureService.startTrackingActiveBrowser()
         bindCompanionCursor()
@@ -417,7 +485,10 @@ final class HandyManager: NSObject, ObservableObject {
             // lets us write the @MainActor property synchronously, ensuring the
             // value is available the instant captureAccessoryChatOpenToolSnapshot reads it.
             MainActor.assumeIsolated { [weak self] in
-                self?.lastNonHandyFrontmostInfo = (appName, windowTitle, bundleID)
+                guard let self else { return }
+                self.lastNonHandyFrontmostInfo = (appName, windowTitle, bundleID)
+                // Stop the workflow if the user switched to a materially different app.
+                self.workflowRunner.onAppSwitched(newBundleID: bundleID)
             }
         }
     }
@@ -678,6 +749,19 @@ final class HandyManager: NSObject, ObservableObject {
     private var isCurrentMessageFromVoice = false
 
     func sendMessage(_ text: String, fromVoice: Bool = false) {
+        // 0) Workflow short-circuits (tutor mode NEVER enters this path — it doesn't call sendMessage).
+        //    The spec: during an active workflow, a local control phrase is handled locally;
+        //    any other non-empty message cancels the workflow and proceeds as a normal query.
+        let workflowWasActive = workflowRunner.isActive
+        if workflowWasActive, AppSettings.shared.assistantMode != .tutor {
+            if let action = WorkflowControlPhraseDetector.detect(text) {
+                handleWorkflowControlAction(action, originText: text, fromVoice: fromVoice)
+                return
+            }
+            // Typed/voice interruption with a new query → cancel workflow, continue normally.
+            workflowRunner.cancel(reason: .typedInterruption)
+        }
+
         currentResponseTask?.cancel()
         ttsService.stop()
         isCurrentMessageFromVoice = fromVoice
@@ -733,6 +817,28 @@ final class HandyManager: NSObject, ObservableObject {
                     systemPrompt += Self.webSearchPromptAddendum(hasBraveKey: hasBraveKey)
                 }
 
+                // Workflow capability: only non-tutor guide/help path. The intent detector
+                // is conservative; if it says no, we behave exactly like the current build.
+                //
+                // We also treat a RECENTLY-cancelled workflow (< 60s ago) as "active" for
+                // intent-detection purposes — this lets phrases like "what do I do now?" or
+                // "what next?" keep engaging the workflow machinery after the user pressed
+                // Control-Z to ask a follow-up mid-flow.
+                let recentlyCancelled: Bool = {
+                    guard let ts = lastWorkflowEndedAt else { return false }
+                    return Date().timeIntervalSince(ts) < 60
+                }()
+                let intentDecision = WorkflowIntentDetector.decide(
+                    text: text,
+                    workflowActive: workflowRunner.isActive || recentlyCancelled
+                )
+                let isTutor = (AppSettings.shared.assistantMode == .tutor)
+                let workflowEnabled: Bool = !isTutor && intentDecision.shouldEnable
+                if workflowEnabled {
+                    systemPrompt += Self.guidedWorkflowPromptAddendum
+                }
+                print("🧭 sendMessage — text=\"\(text.prefix(120))\" fromVoice=\(fromVoice) tutor=\(isTutor) workflowEnabled=\(workflowEnabled) intent={direct=\(intentDecision.directHits) medium=\(intentDecision.mediumHits) cont=\(intentDecision.isContinuation) reason=\"\(intentDecision.reason)\"}")
+
                 let introPrefix = messages.count <= 1
                     ? "so we are working with \(toolName), let me help you with your query. "
                     : ""
@@ -744,19 +850,39 @@ final class HandyManager: NSObject, ObservableObject {
                 voiceState = .processing
                 webSearchStatusText = ""
                 var collectedSearchTools: [String] = []
+                let runnerActiveBeforeStream = workflowRunner.isActive
+
+                // Tool list assembled once — may be empty (legacy non-search, non-workflow path).
+                let toolsList = ClaudeAPIService.availableTools(
+                    webSearchEnabled: useWebSearch,
+                    workflowEnabled: workflowEnabled
+                )
+                let toolNames = toolsList.compactMap { $0["name"] as? String }
+                print("🧭 sendMessage — tools=\(toolNames) useWebSearch=\(useWebSearch) currentTool=\"\(toolName)\"")
+
+                // Weak self wrapper for the workflow tool callback (the closure crosses actor hops
+                // so we need to hop back to MainActor to talk to the runner).
+                var onWorkflowSubmitted: (@Sendable ([String: Any]) async -> String)? = nil
+                if workflowEnabled {
+                    onWorkflowSubmitted = { [weak self] input in
+                        guard let self = self else { return "workflow rejected: handy unavailable" }
+                        return await self.handleWorkflowToolCall(input: input, fromVoice: fromVoice)
+                    }
+                }
 
                 let stream: AsyncThrowingStream<String, Error>
-                if useWebSearch {
-                    let availableTools = ClaudeAPIService.availableWebSearchTools()
+                if !toolsList.isEmpty {
                     stream = claudeAPI.streamResponseWithToolsAsync(
                         userMessage: text,
                         images: images,
                         conversationHistory: history,
                         systemPrompt: systemPrompt,
-                        tools: availableTools,
+                        tools: toolsList,
                         onToolUse: { [weak self] searchToolName in
                             MainActor.assumeIsolated {
                                 guard let self else { return }
+                                // submit_guided_workflow is a local tool — don't surface a web-search bubble.
+                                if searchToolName == "submit_guided_workflow" { return }
                                 if !collectedSearchTools.contains(searchToolName) {
                                     collectedSearchTools.append(searchToolName)
                                 }
@@ -775,7 +901,8 @@ final class HandyManager: NSObject, ObservableObject {
                                     self.loadingVerb = "Looking things up..."
                                 }
                             }
-                        }
+                        },
+                        onWorkflowSubmitted: onWorkflowSubmitted
                     )
                 } else {
                     stream = claudeAPI.streamResponseAsync(
@@ -854,8 +981,13 @@ final class HandyManager: NSObject, ObservableObject {
                 )
                 historyManager.addTurn(turn, for: toolName)
 
+                // If Claude called submit_guided_workflow in this same turn, the spec says we
+                // must ignore any [POINT] tag it emitted — the workflow runner drives pointing.
+                let workflowAcceptedThisTurn = workflowRunner.isActive && !runnerActiveBeforeStream
+                print("🧭 sendMessage final — workflowAcceptedThisTurn=\(workflowAcceptedThisTurn) runnerState=\(workflowRunner.state) finalTextLen=\(finalText.count)")
                 let pointResult = PointParser.parse(from: finalText)
-                if let coord = pointResult.coordinate, !captures.isEmpty {
+                if !workflowAcceptedThisTurn,
+                   let coord = pointResult.coordinate, !captures.isEmpty {
                     let targetCapture = captures.first { cap in
                         if let screen = pointResult.screenNumber {
                             return cap.label.contains("screen \(screen)")
@@ -875,16 +1007,22 @@ final class HandyManager: NSObject, ObservableObject {
                     detectedElementDisplayFrame = targetCapture.displayFrame
                 }
 
-                // Green bubble: shorter cap than TTS so the overlay stays glanceable.
-                if fromVoice, let raw = voiceSpokenUnclamped {
+                // Green bubble + TTS: suppressed when a workflow was accepted this turn.
+                // The WorkflowRunner now owns ALL voice narration and the yellow overlay bubble
+                // for the duration of the workflow. Speaking Claude's kickoff here would:
+                //   (1) overlap with the runner's "let's go — click X" TTS, and
+                //   (2) overwrite the yellow bubble with a green one that says the wrong thing.
+                if fromVoice, !workflowAcceptedThisTurn, let raw = voiceSpokenUnclamped {
                     overlayResponseText = PointParser.clampVoiceSpokenForOverlay(raw)
                 }
 
-                if fromVoice {
+                if fromVoice, !workflowAcceptedThisTurn {
                     let ttsPreview = textForTTS.prefix(150)
                     let hasTags = finalText.contains("[SPOKEN]")
                     print("🔊 TTS — hasSPOKEN=\(hasTags), len=\(textForTTS.count), preview: \"\(ttsPreview)\"")
                     ttsService.speak(textForTTS)
+                } else if fromVoice, workflowAcceptedThisTurn {
+                    print("🔊 TTS SUPPRESSED — workflow accepted, runner owns voice output")
                 }
 
                 isProcessing = false
@@ -972,6 +1110,19 @@ final class HandyManager: NSObject, ObservableObject {
         speechService.stopListening()
         speechRecognitionErrorObserver = nil
         voiceState = .idle
+
+        // Workflow suspend/resume protocol: if a workflow was suspended while listening,
+        // empty transcript = resume the workflow, non-empty transcript = cancel + proceed.
+        if case .suspendedForVoiceQuery = workflowRunner.state {
+            if transcript.isEmpty {
+                _ = workflowRunner.resumeFromVoiceInterrupt()
+                pendingTranscript = ""
+                return
+            } else {
+                workflowRunner.cancelSuspended(reason: .userNewQuery)
+                // fall through to sendMessage as a brand-new query
+            }
+        }
 
         if !transcript.isEmpty {
             overlayTranscriptText = transcript
@@ -1101,6 +1252,255 @@ final class HandyManager: NSObject, ObservableObject {
         loadingTimer = nil
         loadingVerb = ""
     }
+
+    // MARK: - Guided Workflow Integration
+
+    /// Attach the runner as a presenter (so it can drive the companion-cursor point bubble).
+    /// Call once from `start()`.
+    fileprivate func bindWorkflowRunner() {
+        workflowRunner.attach(presenter: self)
+
+        // When a workflow finishes (any reason), make sure we clear any lingering point bubble
+        // and record the end-time so follow-up continuation phrases still engage workflow mode.
+        workflowRunner.onEnd
+            .receive(on: RunLoop.main)
+            .sink { [weak self] reason in
+                guard let self else { return }
+                print("🧭 Workflow ended: \(reason)")
+                self.clearDetectedElementLocation()
+                self.webSearchStatusText = ""
+                self.lastWorkflowEndedAt = Date()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Called by the ClaudeAPIService tool-use loop when Claude emits `submit_guided_workflow`.
+    /// Must return the tool_result string synchronously (the caller awaits).
+    @MainActor
+    func handleWorkflowToolCall(
+        input: [String: Any],
+        fromVoice: Bool
+    ) async -> String {
+        print("🧭 handleWorkflowToolCall — fromVoice=\(fromVoice) keys=\(Array(input.keys))")
+        // Parse the raw tool input into our validator's RawPlan shape.
+        let rawSteps: [WorkflowPlanValidator.RawStep]
+        if let stepsArray = input["steps"] as? [[String: Any]] {
+            print("🧭   incoming steps count: \(stepsArray.count)")
+            rawSteps = stepsArray.map { dict in
+                WorkflowPlanValidator.RawStep(
+                    label: (dict["label"] as? String) ?? "",
+                    hint: (dict["hint"] as? String) ?? "",
+                    expectedRole: dict["expectedRole"] as? String,
+                    x: (dict["x"] as? Int) ?? (dict["x"] as? NSNumber)?.intValue,
+                    y: (dict["y"] as? Int) ?? (dict["y"] as? NSNumber)?.intValue,
+                    continuationMode: dict["continuationMode"] as? String,
+                    previewDelaySeconds: (dict["previewDelaySeconds"] as? Double)
+                        ?? (dict["previewDelaySeconds"] as? NSNumber)?.doubleValue,
+                    idleSeconds: (dict["idleSeconds"] as? Double)
+                        ?? (dict["idleSeconds"] as? NSNumber)?.doubleValue,
+                    maxPreviewDelaySeconds: (dict["maxPreviewDelaySeconds"] as? Double)
+                        ?? (dict["maxPreviewDelaySeconds"] as? NSNumber)?.doubleValue,
+                    previewMessage: dict["previewMessage"] as? String
+                )
+            }
+        } else {
+            return "workflow rejected: missing or invalid steps field"
+        }
+
+        let raw = WorkflowPlanValidator.RawPlan(
+            goal: (input["goal"] as? String) ?? "",
+            app: (input["app"] as? String) ?? currentToolName,
+            steps: rawSteps
+        )
+
+        // Build context hints so app-match can succeed for browser contexts where the
+        // tool name is an umbrella site label (e.g. "google.com") but Claude's plan.app
+        // is something visually on-screen (e.g. "Gmail").
+        var contextHints: [String] = []
+        if let info = lastNonHandyFrontmostInfo {
+            contextHints.append(info.appName)
+            contextHints.append(info.windowTitle)
+        }
+        if let url = ScreenCaptureService.browserURL() {
+            if let host = ScreenCaptureService.domainFromURL(url) {
+                contextHints.append(host)
+            }
+        }
+        print("🧭 handleWorkflowToolCall — currentTool=\"\(currentToolName)\" hints=\(contextHints.filter { !$0.isEmpty })")
+
+        let outcome = WorkflowPlanValidator.validate(
+            raw: raw,
+            currentToolName: currentToolName,
+            contextHints: contextHints,
+            fromVoice: fromVoice
+        )
+
+        switch outcome {
+        case .accepted(let plan):
+            print("🧭 Plan validated OK — goal=\"\(plan.goal)\" app=\"\(plan.app)\" steps=\(plan.steps.map { $0.label })")
+            // Spec: first step must resolve locally before plan acceptance.
+            // Provide the last-non-Handy app's PID so we can resolve even when Handy's chat
+            // panel has key focus (common for typed workflows).
+            let fallbackPID = workflowFallbackPID()
+            let resolver = SemanticElementResolver()
+            if let resolved = resolver.resolve(step: plan.steps[0], previousRect: nil, fallbackPID: fallbackPID) {
+                print("🧭 Step 1 resolved — rect=\(resolved.globalRect) role=\(resolved.role) matched=\"\(resolved.matchedLabel)\"")
+            } else {
+                let frontBid = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "nil"
+                print("🧭 Workflow plan rejected: step 1 not resolvable on screen — \"\(plan.steps[0].label)\" (frontmost=\(frontBid), lastNonHandy=\(lastNonHandyFrontmostInfoBundleID() ?? "nil"), fallbackPID=\(fallbackPID.map { String($0) } ?? "nil"))")
+                return "workflow rejected: step 1 (\"\(plan.steps[0].label)\") is not currently visible on screen"
+            }
+
+            let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+                ?? lastDetectedBundleIDExposed()
+            workflowRunner.fallbackPIDProvider = { [weak self] in self?.workflowFallbackPID() }
+            workflowRunner.start(plan: plan, currentBundleID: bundleID)
+            lastAcceptedPlanBundleID = bundleID
+            print("🧭 Workflow plan accepted — \(plan.steps.count) steps for \"\(plan.goal)\" runnerState=\(workflowRunner.state)")
+            return "workflow accepted: \(plan.steps.count) steps queued for \(plan.app)"
+
+        case .rejected(let errors):
+            let reasons = errors.map { $0.message }.joined(separator: "; ")
+            print("🧭 Workflow plan rejected: \(reasons)")
+            return "workflow rejected: \(reasons)"
+        }
+    }
+
+    /// Exposed for logging inside the workflow helpers.
+    fileprivate func lastNonHandyFrontmostInfoBundleID() -> String? {
+        return lastNonHandyFrontmostInfo?.bundleID
+    }
+
+    /// PID of the last non-Handy app we saw. Used by the AX resolver so step resolution still
+    /// works when Handy's chat panel has key focus (we can't resolve elements in our own UI).
+    fileprivate func workflowFallbackPID() -> pid_t? {
+        guard let bid = lastNonHandyFrontmostInfo?.bundleID else { return nil }
+        if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bid && !$0.isTerminated }) {
+            return app.processIdentifier
+        }
+        return nil
+    }
+
+    /// Handle a local control phrase while a workflow is active. No Claude round-trip.
+    @MainActor
+    fileprivate func handleWorkflowControlAction(
+        _ action: WorkflowControlAction,
+        originText: String,
+        fromVoice: Bool
+    ) {
+        // Echo the user's command into the chat so they can see what we interpreted.
+        let toolName = currentToolName
+        let userMsg = ChatMessage(role: .user, content: originText, toolName: toolName)
+        messages.append(userMsg)
+
+        let systemNote: String
+        switch action {
+        case .stop:
+            workflowRunner.cancel(reason: .userStop)
+            systemNote = "stopped the workflow."
+        case .retry:
+            workflowRunner.retryCurrentStep()
+            systemNote = "retrying the current step."
+        case .skip:
+            workflowRunner.skipCurrentStep()
+            systemNote = "skipping ahead."
+        case .next:
+            // Already advancing on clicks; acknowledge but don't change state.
+            systemNote = "i'm waiting for your click — the next step will reveal itself automatically."
+        case .resume:
+            if case .suspendedForVoiceQuery = workflowRunner.state {
+                _ = workflowRunner.resumeFromVoiceInterrupt()
+                systemNote = "resumed the workflow."
+            } else {
+                systemNote = "nothing to resume — the workflow is already running."
+            }
+        case .restartStep:
+            workflowRunner.retryCurrentStep()
+            systemNote = "starting this step over."
+        }
+        let ack = ChatMessage(role: .assistant, content: systemNote, toolName: toolName)
+        messages.append(ack)
+
+        if fromVoice {
+            ttsService.speak(systemNote)
+        }
+    }
+
+    /// Exposes `lastDetectedBundleID` to extension methods (it's private, and we don't want to
+    /// change that property's visibility globally).
+    fileprivate func lastDetectedBundleIDExposed() -> String? {
+        return lastDetectedBundleID
+    }
+}
+
+// MARK: - WorkflowPointerPresenting
+
+extension HandyManager: WorkflowPointerPresenting {
+    func pointAtWorkflowStep(
+        globalRect: CGRect,
+        label: String,
+        previewMessage: String?,
+        isPreview: Bool,
+        speak: Bool
+    ) {
+        // Use the existing companion-cursor plumbing: set the target + bubble text.
+        // Center the pointer inside the element's rect.
+        let center = CGPoint(x: globalRect.midX, y: globalRect.midY)
+        // Find the screen containing that point (AppKit global coords).
+        let targetFrame = NSScreen.screens.first(where: { $0.frame.contains(center) })?.frame
+            ?? NSScreen.main?.frame
+            ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
+
+        detectedElementBubbleText = label
+        detectedElementScreenLocation = center
+        detectedElementDisplayFrame = targetFrame
+        // Voice workflows use the yellow bubble for per-step narration — the blue label
+        // bubble near the triangle would fight with it. Hide the blue label so only the
+        // yellow narration bubble remains for voice workflows.
+        suppressCompanionNavigationLabelBubble = (workflowRunner.plan?.fromVoice ?? false)
+
+        // Build Handy's current narration line.
+        //  - For a previewed (future) step, use the previewMessage.
+        //  - For an awaiting-click step, use a short "click <label>" line.
+        let narrationText: String
+        if let msg = previewMessage, !msg.isEmpty {
+            narrationText = msg
+        } else if !isPreview {
+            narrationText = "click \(label.lowercased())"
+        } else {
+            narrationText = "next: click \(label.lowercased())"
+        }
+
+        // Kill any lingering green response bubble BEFORE we set the yellow one, so
+        // the companion cursor view doesn't briefly render both overlapping.
+        overlayResponseText = ""
+        // Force a change notification even if we happen to land on the same string
+        // (two consecutive steps could both say "click send" — that would be a no-op).
+        if overlayTranscriptText == narrationText {
+            overlayTranscriptText = ""
+        }
+        overlayTranscriptText = PointParser.clampVoiceSpokenForOverlay(narrationText)
+
+        print("🧭 pointAtWorkflowStep — label=\"\(label)\" isPreview=\(isPreview) speak=\(speak) rect=\(globalRect) narration=\"\(narrationText)\"")
+
+        if speak {
+            if let msg = previewMessage, !msg.isEmpty {
+                print("🔊 Workflow TTS (preview): \"\(msg)\"")
+                ttsService.speak(msg)
+            } else if !isPreview {
+                let kickoff = "let's go — click \(label.lowercased())"
+                print("🔊 Workflow TTS (kickoff): \"\(kickoff)\"")
+                ttsService.speak(kickoff)
+            }
+        }
+    }
+
+    func clearWorkflowPointer() {
+        clearDetectedElementLocation()
+        // Also clear the yellow workflow narration so the bubble doesn't linger after completion.
+        overlayTranscriptText = ""
+        print("🧭 clearWorkflowPointer — cleared detected element + overlay transcript")
+    }
 }
 
 // MARK: - HotkeyManagerDelegate
@@ -1116,8 +1516,15 @@ extension HandyManager: HotkeyManagerDelegate {
                 self.chatPanelManager?.toggle()
             case .voiceInput:
                 if self.voiceState == .listening {
+                    // Stop listening. If a workflow was suspended waiting for this, empty
+                    // transcript resumes it and non-empty cancels it (handled in stopVoiceInput).
                     self.stopVoiceInput()
                 } else {
+                    // If a workflow is currently running, suspend it first. Control-Z during
+                    // a running workflow = "interrupt to ask something", per spec.
+                    if self.workflowRunner.isActive {
+                        _ = self.workflowRunner.suspendForVoiceInterrupt()
+                    }
                     self.startVoiceInput()
                 }
             }

@@ -1,0 +1,54 @@
+{
+  "": {
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/master.swiftdeps"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/PointParserRegressionTests.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/PointParserRegressionTests.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/SemanticElementResolverTests.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/SemanticElementResolverTests.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowContinuationPolicyTests.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowContinuationPolicyTests.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowControlPhraseDetectorTests.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowControlPhraseDetectorTests.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowIntentDetectorTests.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowIntentDetectorTests.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowPlanValidatorTests.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowPlanValidatorTests.dia"
+  },
+  "/Users/satvik.bansal/Desktop/Handydotapp/Handy/Tests/HandyTests/WorkflowRunnerTests.swift": {
+    "dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests.d",
+    "object": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests.swift.o",
+    "swiftmodule": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests.swiftdeps",
+    "diagnostics": "/Users/satvik.bansal/Desktop/Handydotapp/Handy/.build/arm64-apple-macosx/debug/HandyTests.build/WorkflowRunnerTests.dia"
+  }
+}
