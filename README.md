@@ -4,7 +4,7 @@
 >
 > **Also in V2:** Guide mode now uses smarter on-screen grounding and narrower screen capture when it can, so pointing is more reliable and cheaper.
 >
-> **Coming soon:** An even smarter, more autonomous **Handy on Android**.
+> 🔜 **Coming soon:** An even smarter, more autonomous **Handy on Android**.
 
 Handy is a native macOS assistant that lives in your menu bar.
 
