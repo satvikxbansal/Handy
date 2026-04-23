@@ -4,15 +4,9 @@
 >
 > **Also in V2:** Guide mode now uses smarter on-screen grounding and narrower screen capture when it can, so pointing is more reliable and cheaper.
 >
-> 🔜 **Coming soon:** An even smarter, more autonomous **Handy on Android**.
+> 🔜 👀 **Coming soon:** An even smarter, more autonomous **Handy on Android**.
 
-<<<<<<< HEAD
-A demo video is in [this LinkedIn post that kinda blew up](https://www.linkedin.com/posts/satvikbansal_opensource-ai-ugcPost-7451566626602188800--lHC?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAACmYNuUBBhrbyLfMJevwXc0cTW5QzyhSWdo).
-
-Handy is a native macOS assistant that lives in your menu bar. It looks at your screen, listens when you want it to, and talks back—so you can ask “what do I click?” or “what does this mean?” without pasting screenshots into a separate chat window.
-=======
 Handy is a native macOS assistant that lives in your menu bar.
->>>>>>> 8d9e8bb6762f8eb678ddacc1bc13b0af1291cd5c
 
 It looks at your screen, listens when you want it to, and talks back—so you can ask “what do I click?” or “what does this mean?” without pasting screenshots into a separate chat window. You can open chat with a keyboard shortcut, the menu bar, or an **optional tiny floating widget** on the edge of the screen. The widget is there if you want a quick tap target without remembering shortcuts. The deeper idea is **context that matches how you actually work**.
 
